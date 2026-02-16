@@ -884,6 +884,7 @@
                                         <div style="display: flex; gap: 0.5rem;">
                                             ${tieneVenta || tieneArqueo ? `
                                                 <button onclick="verDetalle('${fecha}')" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">👁️ Ver</button>
+                                                ${tieneVenta ? `<button onclick="editarVentas('${fecha}')" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">✏️ Editar</button>` : ''}
                                                 <button onclick="eliminarDia('${fecha}')" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;">🗑️ Eliminar</button>
                                             ` : '-'}
                                         </div>
@@ -1127,6 +1128,32 @@
                 showAlert('❌ Error al eliminar: ' + error.message, 'danger');
                 console.error('Error eliminando día:', error);
             }
+        }
+        
+        async function editarVentas(fecha) {
+            const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            if (!confirm(`¿Deseas editar las ventas del ${fechaFormateada}?\n\nSe cargará esta fecha en la pestaña Carga Diaria para que puedas modificarla.`)) {
+                return;
+            }
+            
+            // Cambiar a la pestaña de Carga Diaria
+            const tabCarga = document.querySelector('.nav-tab:first-child');
+            tabCarga.click();
+            
+            // Cambiar la fecha
+            const inputFecha = document.getElementById('ventaFecha');
+            inputFecha.value = fecha;
+            inputFecha.setAttribute('data-fecha-cargada', fecha);
+            
+            // Cargar los datos de esa fecha
+            await cargarDatosVenta();
+            
+            // Scroll al inicio
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Mostrar mensaje
+            showAlert(`📝 Editando ventas del ${fechaFormateada}. Modifica los datos y guarda cuando termines.`, 'success');
         }
         
         async function cargarProductos() {
