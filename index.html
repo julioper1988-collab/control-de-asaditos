@@ -1,0 +1,2055 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Asaditos - Sistema Completo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E85A2A;
+            --secondary: #2D3142;
+            --accent: #FFB627;
+            --bg-main: #F8F9FA;
+            --bg-card: #FFFFFF;
+            --text-dark: #1A1A1A;
+            --text-light: #6C757D;
+            --border: #E9ECEF;
+            --success: #28A745;
+            --danger: #DC3545;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--secondary) 0%, #1a1e2e 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1.5rem 2rem 0;
+            background: var(--bg-main);
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+        
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-light);
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 0.95rem;
+        }
+        
+        .nav-tab:hover {
+            color: var(--primary);
+            background: rgba(255, 107, 53, 0.05);
+        }
+        
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #1a1e2e;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table thead {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .table th,
+        .table td {
+            padding: 1rem;
+            text-align: left;
+        }
+        
+        .table tbody tr {
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .table tbody tr:hover {
+            background: rgba(255, 107, 53, 0.05);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .product-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-main);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            align-items: center;
+        }
+        
+        .product-name {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        .denomination-row {
+            display: grid;
+            grid-template-columns: 150px 1fr 150px;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .denomination-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .denomination-total {
+            text-align: right;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid var(--success);
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid var(--danger);
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .product-row { grid-template-columns: 1fr; }
+            .denomination-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span style="font-size: 2rem;">🔥</span> Control de Asaditos</h1>
+    </div>
+    
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showTab('carga')">📝 Carga Diaria</button>
+        <button class="nav-tab" onclick="showTab('arqueo')">💰 Arqueo de Caja</button>
+        <button class="nav-tab" onclick="showTab('catalogo')">📦 Catálogo</button>
+        <button class="nav-tab" onclick="showTab('dashboard')">📊 Dashboard</button>
+        <button class="nav-tab" onclick="showTab('historial')">📋 Historial</button>
+    </div>
+    
+    <div class="container">
+        <div id="alertContainer"></div>
+        
+        <div id="tab-carga" class="tab-content active">
+            <div class="card">
+                <div class="card-header">📝 Registro de Ventas Diarias</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" id="ventaFecha" class="form-input" onchange="cargarDatosVenta()">
+                </div>
+                
+                <div id="alertSobrantes" class="hidden"></div>
+                
+                <div id="productosVenta"></div>
+                
+                <button onclick="guardarVentas()" class="btn btn-success">💾 Guardar Ventas del Día</button>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">📋 Resumen del Día</div>
+                <div class="grid grid-3">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Vendido</div>
+                        <div class="stat-value" id="totalVendidoDia">0</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%);">
+                        <div class="stat-label">Ganancia Estimada</div>
+                        <div class="stat-value" id="gananciaEstimadaDia">₲ 0</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--accent) 0%, #e09e1c 100%);">
+                        <div class="stat-label">Ingreso Total</div>
+                        <div class="stat-value" id="ingresoTotalDia">₲ 0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tab-arqueo" class="tab-content">
+            <div class="card">
+                <div class="card-header">💵 Conteo de Efectivo</div>
+                
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Fecha del Arqueo</label>
+                        <input type="date" id="arqueoFecha" class="form-input">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Responsable</label>
+                        <input type="text" id="arqueoResponsable" class="form-input" value="Julio">
+                    </div>
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">Billetes</h3>
+                <div id="billetes"></div>
+                
+                <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">Monedas</h3>
+                <div id="monedas"></div>
+                
+                <div style="background: var(--bg-main); padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem;">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">Total en Caja</h3>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace;" id="totalEfectivo">₲ 0</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">📋 Rendición del Día</div>
+                
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Sencillo de Inicio</label>
+                        <input type="number" id="sencilloInicio" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnter(event, 'sencilloInicio')">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Pedidos Ya</label>
+                        <input type="number" id="pedidosYa" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnter(event, 'pedidosYa')">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">POS / Tarjeta</label>
+                        <input type="number" id="pos" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnter(event, 'pos')">
+                    </div>
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">📝 Detalle de Gastos</h3>
+                <div id="listaGastos"></div>
+                <button onclick="agregarGasto()" class="btn btn-primary" style="margin-bottom: 1rem;">➕ Agregar Gasto</button>
+                
+                <div style="background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 700; font-size: 1.1rem;">Total Gastos:</span>
+                        <span id="totalGastos" style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem; color: var(--danger);">₲ 0</span>
+                    </div>
+                </div>
+                
+                <div style="background: var(--bg-main); padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-weight: 600;">Venta del Día:</span>
+                        <span id="ventaDelDia" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-weight: 600;">Debe Tener:</span>
+                        <span id="debeTener" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-weight: 600;">Total Tiene:</span>
+                        <span id="totalTiene" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                    </div>
+                    <hr style="margin: 1rem 0; border: none; border-top: 2px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-weight: 700; font-size: 1.1rem;">Diferencia:</span>
+                        <span id="diferencia" style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem;">₲ 0</span>
+                    </div>
+                </div>
+                
+                <button onclick="guardarArqueo()" class="btn btn-success" style="margin-top: 1.5rem;">💾 Guardar Arqueo</button>
+            </div>
+        </div>
+        
+        <div id="tab-catalogo" class="tab-content">
+            <div class="card">
+                <div class="card-header">📦 Administrar Productos</div>
+                
+                <button onclick="mostrarFormProducto()" class="btn btn-primary" style="margin-bottom: 1.5rem;">➕ Nuevo Producto</button>
+                
+                <div id="formProducto" class="hidden" style="background: var(--bg-main); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;">Agregar/Editar Producto</h3>
+                    <input type="hidden" id="productoId">
+                    
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Nombre del Producto</label>
+                            <input type="text" id="productoNombre" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Categoría</label>
+                            <select id="productoCategoria" class="form-select">
+                                <option value="ASADITO">Asadito</option>
+                                <option value="EMBUTIDO">Embutido</option>
+                                <option value="PARRILLA">Parrilla</option>
+                                <option value="BEBIDA">Bebida</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Precio de Venta (₲)</label>
+                            <input type="number" id="productoPrecio" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Costo Unitario (₲)</label>
+                            <input type="number" id="productoCosto" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button onclick="guardarProducto()" class="btn btn-success">💾 Guardar</button>
+                        <button onclick="cancelarProducto()" class="btn btn-secondary">❌ Cancelar</button>
+                    </div>
+                </div>
+                
+                <div id="listaProductos"></div>
+            </div>
+        </div>
+        
+        <div id="tab-dashboard" class="tab-content">
+            <!-- Estadísticas Principales -->
+            <div class="grid grid-3">
+                <div class="stat-card">
+                    <div class="stat-label">Venta Total del Mes</div>
+                    <div class="stat-value" id="ventaMes">₲ 0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="ventaMesComparacion"></div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%);">
+                    <div class="stat-label">Ganancia del Mes</div>
+                    <div class="stat-value" id="gananciaMes">₲ 0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="margenMes"></div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--accent) 0%, #e09e1c 100%);">
+                    <div class="stat-label">Promedio Diario</div>
+                    <div class="stat-value" id="promedioDiario">₲ 0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="diasTrabajados"></div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas Secundarias -->
+            <div class="grid grid-3">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: 600; color: var(--text-light);">Mejor Día</span>
+                        <span style="font-size: 0.85rem; color: var(--text-light);" id="mejorDiaFecha"></span>
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace;" id="mejorDia">₲ 0</div>
+                </div>
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: 600; color: var(--text-light);">Peor Día</span>
+                        <span style="font-size: 0.85rem; color: var(--text-light);" id="peorDiaFecha"></span>
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: var(--danger); font-family: 'JetBrains Mono', monospace;" id="peorDia">₲ 0</div>
+                </div>
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: 600; color: var(--text-light);">Unidades Vendidas</span>
+                        <span style="font-size: 0.85rem; color: var(--text-light);">Este mes</span>
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace;" id="totalUnidades">0</div>
+                </div>
+            </div>
+            
+            <!-- Eficiencia y Desperdicios -->
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">📈 Eficiencia de Producción</div>
+                    <div style="display: flex; justify-content: space-around; margin-top: 1rem;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Producción Total</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;" id="totalProduccion">0</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Vendidos</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success); font-family: 'JetBrains Mono', monospace;" id="totalVendidos">0</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Sobrantes</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger); font-family: 'JetBrains Mono', monospace;" id="totalSobrantes">0</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Eficiencia</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="eficiencia">0%</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">💰 Análisis Financiero</div>
+                    <div style="margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-main); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <span style="font-weight: 600;">Ingresos Totales:</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700;" id="ingresosTotal">₲ 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-main); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <span style="font-weight: 600;">Costos Totales:</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);" id="costosTotal">₲ 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-main); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <span style="font-weight: 600;">Ganancia Neta:</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--success);" id="gananciaTotal">₲ 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-main); border-radius: 6px;">
+                            <span style="font-weight: 600;">Margen de Ganancia:</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary);" id="margenGanancia">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Productos -->
+            <div class="card">
+                <div class="card-header">🏆 Top 10 Productos del Mes</div>
+                <div id="topProductos"></div>
+            </div>
+            
+            <!-- Análisis por Categoría -->
+            <div class="card">
+                <div class="card-header">📊 Ventas por Categoría</div>
+                <div id="ventasPorCategoria"></div>
+            </div>
+            
+            <!-- Ventas por Día de la Semana -->
+            <div class="card">
+                <div class="card-header">📅 Rendimiento por Día de la Semana</div>
+                <div id="ventasPorDiaSemana"></div>
+            </div>
+            
+            <!-- Productos con Más Sobrantes -->
+            <div class="card">
+                <div class="card-header">⚠️ Productos con Más Desperdicio</div>
+                <div id="productosSobrantes"></div>
+            </div>
+            
+            <!-- Historial de Ventas Diarias (Últimos 30 días) -->
+            <div class="card">
+                <div class="card-header">📈 Historial de Ventas (Últimos 30 días)</div>
+                <div id="historialVentas"></div>
+            </div>
+        </div>
+        
+        <div id="tab-historial" class="tab-content">
+            <div class="card">
+                <div class="card-header">📋 Historial Completo</div>
+                
+                <div class="grid grid-2" style="margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Fecha Desde</label>
+                        <input type="date" id="historialDesde" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha Hasta</label>
+                        <input type="date" id="historialHasta" class="form-input">
+                    </div>
+                </div>
+                
+                <button onclick="cargarHistorial()" class="btn btn-primary" style="margin-bottom: 1.5rem;">🔍 Buscar</button>
+                
+                <div id="listaHistorial"></div>
+            </div>
+            
+            <!-- Modal de detalle -->
+            <div id="modalDetalle" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+                <div style="background: white; border-radius: 12px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="color: var(--secondary); font-size: 1.5rem;" id="modalTitulo">Detalle del Día</h2>
+                        <button onclick="cerrarModal()" class="btn btn-secondary">❌ Cerrar</button>
+                    </div>
+                    <div id="modalContenido"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://sdpysvowvwucjfnyosuf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcHlzdm93dnd1Y2pmbnlvc3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjMxNjUsImV4cCI6MjA4NjgzOTE2NX0.-03XyWwC2X0V4Dp4dtCq5oxcvYInBMGRccZSAq5nDQ8';
+        
+        let db;
+        let productos = [];
+        let ventaDelDiaActual = 0;
+        let gastos = [];
+        
+        const BILLETES = [100000, 50000, 20000, 10000, 5000, 2000];
+        const MONEDAS = [1000, 500, 100];
+        
+        window.onload = async function() {
+            const { createClient } = supabase;
+            db = createClient(SUPABASE_URL, SUPABASE_KEY);
+            
+            await cargarProductos();
+            renderProductosVenta();
+            renderDenominaciones();
+            renderGastos();
+            
+            const today = new Date().toISOString().split('T')[0];
+            const ventaFechaInput = document.getElementById('ventaFecha');
+            ventaFechaInput.value = today;
+            ventaFechaInput.setAttribute('data-fecha-cargada', today);
+            
+            document.getElementById('arqueoFecha').value = today;
+            
+            // Establecer rango del historial (último mes)
+            const hace30dias = new Date();
+            hace30dias.setDate(hace30dias.getDate() - 30);
+            document.getElementById('historialDesde').value = hace30dias.toISOString().split('T')[0];
+            document.getElementById('historialHasta').value = today;
+            
+            // Cargar datos de venta (sobrantes del día anterior si aplica)
+            await cargarDatosVenta();
+            
+            showAlert('✅ Sistema conectado correctamente', 'success');
+        };
+        
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            document.getElementById('alertContainer').appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+        
+        function showTab(tabName) {
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            
+            if (tabName === 'dashboard') cargarDashboard();
+            else if (tabName === 'catalogo') cargarListaProductos();
+            else if (tabName === 'arqueo') cargarVentaDelDia();
+            else if (tabName === 'historial') cargarHistorial();
+        }
+        
+        async function cargarHistorial() {
+            const desde = document.getElementById('historialDesde').value;
+            const hasta = document.getElementById('historialHasta').value;
+            
+            if (!desde || !hasta) {
+                showAlert('⚠️ Selecciona un rango de fechas', 'warning');
+                return;
+            }
+            
+            // Obtener ventas
+            const { data: ventas } = await db
+                .from('ventas')
+                .select('*')
+                .gte('fecha', desde)
+                .lte('fecha', hasta)
+                .order('fecha', { ascending: false });
+            
+            // Obtener arqueos
+            const { data: arqueos } = await db
+                .from('arqueos')
+                .select('*')
+                .gte('fecha', desde)
+                .lte('fecha', hasta)
+                .order('fecha', { ascending: false });
+            
+            // Agrupar ventas por fecha
+            const ventasPorFecha = {};
+            if (ventas) {
+                ventas.forEach(v => {
+                    if (!ventasPorFecha[v.fecha]) {
+                        ventasPorFecha[v.fecha] = {
+                            ventas: [],
+                            ingreso: 0,
+                            ganancia: 0,
+                            unidades: 0
+                        };
+                    }
+                    ventasPorFecha[v.fecha].ventas.push(v);
+                    ventasPorFecha[v.fecha].ingreso += v.ingreso;
+                    ventasPorFecha[v.fecha].ganancia += v.ganancia;
+                    ventasPorFecha[v.fecha].unidades += v.vendidos;
+                });
+            }
+            
+            // Crear mapa de arqueos
+            const arqueosMap = {};
+            if (arqueos) {
+                arqueos.forEach(a => {
+                    arqueosMap[a.fecha] = a;
+                });
+            }
+            
+            // Obtener todas las fechas únicas
+            const todasFechas = [...new Set([...Object.keys(ventasPorFecha), ...Object.keys(arqueosMap)])].sort().reverse();
+            
+            if (todasFechas.length === 0) {
+                document.getElementById('listaHistorial').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos en este rango</p>';
+                return;
+            }
+            
+            const html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Ingresos</th>
+                            <th>Ganancia</th>
+                            <th>Unidades</th>
+                            <th>Arqueo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${todasFechas.map(fecha => {
+                            const venta = ventasPorFecha[fecha];
+                            const arqueo = arqueosMap[fecha];
+                            const tieneVenta = !!venta;
+                            const tieneArqueo = !!arqueo;
+                            
+                            return `
+                                <tr style="background: ${tieneVenta && !tieneArqueo ? '#fff3cd' : 'white'};">
+                                    <td style="font-weight: 600;">${new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY')}</td>
+                                    <td>${tieneVenta ? '₲ ' + venta.ingreso.toLocaleString() : '-'}</td>
+                                    <td style="color: var(--success); font-weight: 600;">${tieneVenta ? '₲ ' + venta.ganancia.toLocaleString() : '-'}</td>
+                                    <td>${tieneVenta ? venta.unidades : '-'}</td>
+                                    <td>
+                                        ${tieneArqueo ? '✅ Completado' : (tieneVenta ? '<span style="color: var(--danger); font-weight: 600;">❌ Faltante</span>' : '-')}
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            ${tieneVenta || tieneArqueo ? `
+                                                <button onclick="verDetalle('${fecha}')" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">👁️ Ver</button>
+                                                <button onclick="eliminarDia('${fecha}')" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;">🗑️ Eliminar</button>
+                                            ` : '-'}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('listaHistorial').innerHTML = html;
+        }
+        
+        async function verDetalle(fecha) {
+            const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('modalTitulo').textContent = `Detalle del ${fechaFormateada}`;
+            
+            // Obtener ventas del día
+            const { data: ventas } = await db
+                .from('ventas')
+                .select('*')
+                .eq('fecha', fecha);
+            
+            // Obtener arqueo del día
+            const { data: arqueo } = await db
+                .from('arqueos')
+                .select('*')
+                .eq('fecha', fecha)
+                .single();
+            
+            // Obtener gastos si hay arqueo
+            let gastos = [];
+            if (arqueo) {
+                const { data: gastosData } = await db
+                    .from('gastos')
+                    .select('*')
+                    .eq('arqueo_id', arqueo.id);
+                if (gastosData) gastos = gastosData;
+            }
+            
+            let html = '';
+            
+            // Sección de Ventas
+            if (ventas && ventas.length > 0) {
+                const totalIngreso = ventas.reduce((sum, v) => sum + v.ingreso, 0);
+                const totalGanancia = ventas.reduce((sum, v) => sum + v.ganancia, 0);
+                
+                html += `
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--secondary); margin-bottom: 1rem;">📝 Ventas del Día</h3>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Producción</th>
+                                    <th>Sobrante</th>
+                                    <th>Vendidos</th>
+                                    <th>Precio</th>
+                                    <th>Ingreso</th>
+                                    <th>Ganancia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${ventas.map(v => {
+                                    const producto = productos.find(p => p.id === v.producto_id);
+                                    return `
+                                        <tr>
+                                            <td style="font-weight: 600;">${producto ? producto.nombre : 'Producto #' + v.producto_id}</td>
+                                            <td>${v.produccion}</td>
+                                            <td>${v.sobrante}</td>
+                                            <td style="font-weight: 600; color: var(--primary);">${v.vendidos}</td>
+                                            <td>₲ ${v.precio_venta.toLocaleString()}</td>
+                                            <td>₲ ${v.ingreso.toLocaleString()}</td>
+                                            <td style="color: var(--success); font-weight: 600;">₲ ${v.ganancia.toLocaleString()}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                                <tr style="background: var(--bg-main); font-weight: 700;">
+                                    <td colspan="5">TOTALES</td>
+                                    <td>₲ ${totalIngreso.toLocaleString()}</td>
+                                    <td style="color: var(--success);">₲ ${totalGanancia.toLocaleString()}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Sección de Arqueo
+            if (arqueo) {
+                const totalTiene = arqueo.efectivo + arqueo.pedidos_ya + arqueo.pos + arqueo.gastos;
+                const debeTener = ventas ? ventas.reduce((sum, v) => sum + v.ingreso, 0) + arqueo.sencillo_inicio : arqueo.sencillo_inicio;
+                
+                html += `
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--secondary); margin-bottom: 1rem;">💰 Arqueo de Caja</h3>
+                        <div style="background: var(--bg-main); padding: 1.5rem; border-radius: 8px;">
+                            <div class="grid grid-2">
+                                <div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Responsable:</span>
+                                        <span style="margin-left: 0.5rem;">${arqueo.responsable}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Efectivo en Caja:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.efectivo.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Pedidos Ya:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.pedidos_ya.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">POS:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.pos.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Sencillo Inicio:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.sencillo_inicio.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Gastos:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; color: var(--danger);">₲ ${arqueo.gastos.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Total Tiene:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ ${totalTiene.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Diferencia:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${arqueo.diferencia >= 0 ? 'var(--success)' : 'var(--danger)'};">₲ ${arqueo.diferencia.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Gastos
+                if (gastos.length > 0) {
+                    html += `
+                        <div>
+                            <h3 style="color: var(--secondary); margin-bottom: 1rem;">📝 Detalle de Gastos</h3>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${gastos.map(g => `
+                                        <tr>
+                                            <td style="font-weight: 600;">${g.concepto}</td>
+                                            <td style="color: var(--danger); font-weight: 600;">₲ ${g.monto.toLocaleString()}</td>
+                                        </tr>
+                                    `).join('')}
+                                    <tr style="background: var(--bg-main); font-weight: 700;">
+                                        <td>TOTAL</td>
+                                        <td style="color: var(--danger);">₲ ${gastos.reduce((sum, g) => sum + g.monto, 0).toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            } else if (ventas && ventas.length > 0) {
+                html += `
+                    <div class="alert alert-danger">
+                        ⚠️ Este día tiene ventas registradas pero NO tiene arqueo de caja guardado.
+                    </div>
+                `;
+            }
+            
+            document.getElementById('modalContenido').innerHTML = html;
+            document.getElementById('modalDetalle').classList.remove('hidden');
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalDetalle').classList.add('hidden');
+        }
+        
+        async function eliminarDia(fecha) {
+            const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            // Confirmar con el usuario
+            const confirmacion = confirm(
+                `⚠️ ADVERTENCIA CRÍTICA\n\n` +
+                `Estás a punto de ELIMINAR PERMANENTEMENTE todos los datos del ${fechaFormateada}:\n\n` +
+                `• Todas las ventas del día\n` +
+                `• El arqueo de caja\n` +
+                `• Todos los gastos registrados\n\n` +
+                `Esta acción NO se puede deshacer.\n\n` +
+                `¿Estás completamente seguro de eliminar TODOS los datos de este día?`
+            );
+            
+            if (!confirmacion) return;
+            
+            // Confirmación adicional para estar seguros
+            const confirmacionFinal = confirm(
+                `⚠️ ÚLTIMA CONFIRMACIÓN\n\n` +
+                `¿REALMENTE deseas eliminar todos los datos del ${fechaFormateada}?\n\n` +
+                `Esta es tu última oportunidad para cancelar.`
+            );
+            
+            if (!confirmacionFinal) return;
+            
+            try {
+                // 1. Obtener el arqueo (para eliminar gastos vinculados)
+                const { data: arqueo } = await db
+                    .from('arqueos')
+                    .select('id')
+                    .eq('fecha', fecha)
+                    .single();
+                
+                // 2. Eliminar gastos si hay arqueo
+                if (arqueo) {
+                    await db.from('gastos').delete().eq('arqueo_id', arqueo.id);
+                }
+                
+                // 3. Eliminar arqueo
+                await db.from('arqueos').delete().eq('fecha', fecha);
+                
+                // 4. Eliminar ventas
+                await db.from('ventas').delete().eq('fecha', fecha);
+                
+                showAlert(`✅ Todos los datos del ${fechaFormateada} han sido eliminados`, 'success');
+                
+                // Recargar el historial
+                await cargarHistorial();
+                
+            } catch (error) {
+                showAlert('❌ Error al eliminar: ' + error.message, 'danger');
+                console.error('Error eliminando día:', error);
+            }
+        }
+        
+        async function cargarProductos() {
+            const { data } = await db.from('productos').select('*').eq('activo', true).order('nombre');
+            if (data) productos = data;
+        }
+        
+        async function cargarDatosVenta() {
+            const fechaSeleccionada = document.getElementById('ventaFecha').value;
+            if (!fechaSeleccionada) return;
+            
+            // Obtener la fecha actual del input antes de cambiarla
+            const fechaActualInput = document.getElementById('ventaFecha');
+            const fechaAnteriorCargada = fechaActualInput.getAttribute('data-fecha-cargada');
+            
+            // Si hay una fecha anterior cargada, verificar que tenga arqueo
+            if (fechaAnteriorCargada && fechaAnteriorCargada !== fechaSeleccionada) {
+                // Verificar si hay ventas guardadas para esa fecha
+                const { data: ventasFechaAnterior } = await db
+                    .from('ventas')
+                    .select('id')
+                    .eq('fecha', fechaAnteriorCargada)
+                    .limit(1);
+                
+                if (ventasFechaAnterior && ventasFechaAnterior.length > 0) {
+                    // Hay ventas, verificar si hay arqueo
+                    const { data: arqueoAnterior } = await db
+                        .from('arqueos')
+                        .select('id')
+                        .eq('fecha', fechaAnteriorCargada)
+                        .single();
+                    
+                    if (!arqueoAnterior) {
+                        // No hay arqueo para el día con ventas
+                        if (!confirm(`⚠️ ADVERTENCIA: El día ${new Date(fechaAnteriorCargada + 'T00:00:00').toLocaleDateString('es-PY')} tiene ventas registradas pero NO tiene arqueo de caja guardado.\n\n¿Estás seguro de cambiar de fecha sin completar el arqueo?`)) {
+                            // Restaurar la fecha anterior
+                            fechaActualInput.value = fechaAnteriorCargada;
+                            return;
+                        }
+                    }
+                }
+            }
+            
+            // Guardar la nueva fecha como cargada
+            fechaActualInput.setAttribute('data-fecha-cargada', fechaSeleccionada);
+            
+            // Buscar el día anterior con datos
+            const { data: ventasAnteriores } = await db
+                .from('ventas')
+                .select('*')
+                .lt('fecha', fechaSeleccionada)
+                .order('fecha', { ascending: false })
+                .limit(100);
+            
+            if (!ventasAnteriores || ventasAnteriores.length === 0) {
+                // No hay días anteriores, limpiar todo
+                limpiarFormularioVentas();
+                return;
+            }
+            
+            // Agrupar por fecha y obtener la más reciente
+            const fechasUnicas = [...new Set(ventasAnteriores.map(v => v.fecha))];
+            const fechaAnterior = fechasUnicas[0];
+            const ventasDiaAnterior = ventasAnteriores.filter(v => v.fecha === fechaAnterior);
+            
+            // Verificar si ya hay datos para la fecha seleccionada
+            const { data: ventasHoy } = await db
+                .from('ventas')
+                .select('*')
+                .eq('fecha', fechaSeleccionada);
+            
+            if (ventasHoy && ventasHoy.length > 0) {
+                // Ya hay datos guardados para este día, cargarlos
+                cargarDatosExistentes(ventasHoy);
+            } else {
+                // No hay datos, cargar sobrantes del día anterior
+                cargarSobrantesComoProduccion(ventasDiaAnterior, fechaAnterior);
+            }
+        }
+        
+        function limpiarFormularioVentas() {
+            productos.forEach(p => {
+                document.getElementById(`sobrant_ant_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`sobr_${p.id}`).value = 0;
+            });
+            calcularResumen();
+            
+            const alertDiv = document.getElementById('alertSobrantes');
+            alertDiv.className = 'hidden';
+        }
+        
+        function cargarDatosExistentes(ventas) {
+            // Limpiar primero
+            productos.forEach(p => {
+                document.getElementById(`sobrant_ant_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`sobr_${p.id}`).value = 0;
+            });
+            
+            // Cargar los datos guardados
+            ventas.forEach(v => {
+                const sobrantAntInput = document.getElementById(`sobrant_ant_${v.producto_id}`);
+                const prodHoyInput = document.getElementById(`prod_hoy_${v.producto_id}`);
+                const prodInput = document.getElementById(`prod_${v.producto_id}`);
+                const sobrInput = document.getElementById(`sobr_${v.producto_id}`);
+                
+                if (prodInput) prodInput.value = v.produccion;
+                if (sobrInput) sobrInput.value = v.sobrante;
+                
+                // Calcular cuánto fue sobrante anterior vs producido hoy
+                // Si los datos tienen produccion_nueva guardada, usarla; sino asumir que toda la producción fue nueva
+                if (prodHoyInput) {
+                    prodHoyInput.value = v.produccion_nueva || v.produccion;
+                }
+                if (sobrantAntInput) {
+                    sobrantAntInput.value = v.sobrante_anterior || 0;
+                }
+            });
+            
+            calcularResumen();
+            
+            const alertDiv = document.getElementById('alertSobrantes');
+            alertDiv.className = 'alert alert-info';
+            alertDiv.innerHTML = '📋 Cargados datos guardados para esta fecha';
+        }
+        
+        function cargarSobrantesComoProduccion(ventasDiaAnterior, fechaAnterior) {
+            // Limpiar primero
+            productos.forEach(p => {
+                document.getElementById(`sobrant_ant_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`sobr_${p.id}`).value = 0;
+            });
+            
+            let totalSobrantes = 0;
+            
+            // Cargar sobrantes en el campo "Sobrante Ayer"
+            ventasDiaAnterior.forEach(v => {
+                if (v.sobrante > 0) {
+                    const sobrantAntInput = document.getElementById(`sobrant_ant_${v.producto_id}`);
+                    const prodInput = document.getElementById(`prod_${v.producto_id}`);
+                    if (sobrantAntInput && prodInput) {
+                        sobrantAntInput.value = v.sobrante;
+                        prodInput.value = v.sobrante; // Total producción = sobrante anterior (por ahora)
+                        totalSobrantes += v.sobrante;
+                    }
+                }
+            });
+            
+            calcularResumen();
+            
+            const alertDiv = document.getElementById('alertSobrantes');
+            if (totalSobrantes > 0) {
+                const fechaFormateada = new Date(fechaAnterior + 'T00:00:00').toLocaleDateString('es-PY');
+                alertDiv.className = 'alert alert-success';
+                alertDiv.innerHTML = `✅ Se cargaron <strong>${totalSobrantes} unidades</strong> de sobrantes del ${fechaFormateada}`;
+            } else {
+                alertDiv.className = 'alert alert-info';
+                alertDiv.innerHTML = `ℹ️ No había sobrantes del día anterior para cargar`;
+            }
+        }
+        
+        function renderProductosVenta() {
+            const container = document.getElementById('productosVenta');
+            if (productos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay productos</p>';
+                return;
+            }
+            
+            container.innerHTML = productos.map((p, index) => `
+                <div class="product-row">
+                    <div class="product-name">${p.nombre}</div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Sobrante Ayer</label>
+                        <input type="number" id="sobrant_ant_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Producido Hoy</label>
+                        <input type="number" id="prod_hoy_${p.id}" class="form-input" value="0" onchange="calcularProduccionTotal(${p.id})" onkeypress="handleEnterVentas(event, 'prod_hoy_${p.id}')">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Total Producción</label>
+                        <input type="number" id="prod_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Sobrante Hoy</label>
+                        <input type="number" id="sobr_${p.id}" class="form-input" value="0" onchange="calcularResumen()" onkeypress="handleEnterVentas(event, 'sobr_${p.id}')">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Vendidos</label>
+                        <input type="number" id="vend_${p.id}" class="form-input" value="0" readonly style="background: #f8f9fa; font-weight: 600; color: var(--primary);">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Ingreso</label>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 0.5rem; color: var(--success);" id="ingr_${p.id}">₲ 0</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function calcularProduccionTotal(productoId) {
+            const sobranteAnterior = parseInt(document.getElementById(`sobrant_ant_${productoId}`).value) || 0;
+            const producidoHoy = parseInt(document.getElementById(`prod_hoy_${productoId}`).value) || 0;
+            const totalProduccion = sobranteAnterior + producidoHoy;
+            
+            document.getElementById(`prod_${productoId}`).value = totalProduccion;
+            calcularResumen();
+        }
+        
+        function handleEnterVentas(event, currentId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                // Crear orden de campos dinámicamente
+                const orden = [];
+                productos.forEach(p => {
+                    orden.push(`prod_hoy_${p.id}`);
+                    orden.push(`sobr_${p.id}`);
+                });
+                
+                const currentIndex = orden.indexOf(currentId);
+                if (currentIndex !== -1 && currentIndex < orden.length - 1) {
+                    const nextId = orden[currentIndex + 1];
+                    const nextElement = document.getElementById(nextId);
+                    if (nextElement) {
+                        nextElement.focus();
+                        nextElement.select();
+                    }
+                }
+            }
+        }
+        
+        function calcularResumen() {
+            let totalVendidos = 0, totalIngreso = 0, totalGanancia = 0;
+            
+            productos.forEach(p => {
+                const produccion = parseInt(document.getElementById(`prod_${p.id}`).value) || 0;
+                const sobrante = parseInt(document.getElementById(`sobr_${p.id}`).value) || 0;
+                const vendidos = produccion - sobrante;
+                const ingreso = vendidos * p.precio_venta;
+                const ganancia = vendidos * (p.precio_venta - p.costo_unitario);
+                
+                document.getElementById(`vend_${p.id}`).value = vendidos;
+                document.getElementById(`ingr_${p.id}`).textContent = `₲ ${ingreso.toLocaleString()}`;
+                
+                totalVendidos += vendidos;
+                totalIngreso += ingreso;
+                totalGanancia += ganancia;
+            });
+            
+            ventaDelDiaActual = totalIngreso;
+            document.getElementById('totalVendidoDia').textContent = totalVendidos;
+            document.getElementById('ingresoTotalDia').textContent = `₲ ${totalIngreso.toLocaleString()}`;
+            document.getElementById('gananciaEstimadaDia').textContent = `₲ ${totalGanancia.toLocaleString()}`;
+        }
+        
+        async function guardarVentas() {
+            const fecha = document.getElementById('ventaFecha').value;
+            if (!fecha) { showAlert('⚠️ Selecciona una fecha', 'warning'); return; }
+            
+            const ventas = [];
+            for (const p of productos) {
+                const sobranteAnterior = parseInt(document.getElementById(`sobrant_ant_${p.id}`).value) || 0;
+                const producidoHoy = parseInt(document.getElementById(`prod_hoy_${p.id}`).value) || 0;
+                const produccion = parseInt(document.getElementById(`prod_${p.id}`).value) || 0;
+                const sobrante = parseInt(document.getElementById(`sobr_${p.id}`).value) || 0;
+                const vendidos = produccion - sobrante;
+                
+                if (produccion > 0) {
+                    ventas.push({
+                        fecha, producto_id: p.id, 
+                        sobrante_anterior: sobranteAnterior,
+                        produccion_nueva: producidoHoy,
+                        produccion, 
+                        sobrante, 
+                        vendidos,
+                        precio_venta: p.precio_venta, 
+                        costo_unitario: p.costo_unitario,
+                        ingreso: vendidos * p.precio_venta,
+                        ganancia: vendidos * (p.precio_venta - p.costo_unitario)
+                    });
+                }
+            }
+            
+            if (ventas.length === 0) { showAlert('⚠️ No hay datos', 'warning'); return; }
+            
+            await db.from('ventas').delete().eq('fecha', fecha);
+            const { error } = await db.from('ventas').insert(ventas);
+            
+            if (error) showAlert('❌ Error: ' + error.message, 'danger');
+            else {
+                showAlert('✅ Ventas guardadas correctamente', 'success');
+                
+                // Limpiar alerta de sobrantes
+                const alertDiv = document.getElementById('alertSobrantes');
+                alertDiv.className = 'hidden';
+            }
+        }
+        
+        function renderDenominaciones() {
+            const billetesHtml = BILLETES.map((d, index) => `
+                <div class="denomination-row">
+                    <div class="denomination-label">₲ ${d.toLocaleString()}</div>
+                    <input type="number" id="bil_${d}" class="form-input" value="0" onchange="calcularArqueo()" onkeypress="handleEnter(event, 'bil_${d}')">
+                    <div class="denomination-total" id="total_bil_${d}">₲ 0</div>
+                </div>
+            `).join('');
+            
+            const monedasHtml = MONEDAS.map((d, index) => `
+                <div class="denomination-row">
+                    <div class="denomination-label">₲ ${d.toLocaleString()}</div>
+                    <input type="number" id="mon_${d}" class="form-input" value="0" onchange="calcularArqueo()" onkeypress="handleEnter(event, 'mon_${d}')">
+                    <div class="denomination-total" id="total_mon_${d}">₲ 0</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('billetes').innerHTML = billetesHtml;
+            document.getElementById('monedas').innerHTML = monedasHtml;
+        }
+        
+        function handleEnter(event, currentId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                // Orden de campos
+                const orden = [
+                    ...BILLETES.map(d => `bil_${d}`),
+                    ...MONEDAS.map(d => `mon_${d}`),
+                    'sencilloInicio',
+                    'pedidosYa',
+                    'pos'
+                ];
+                
+                const currentIndex = orden.indexOf(currentId);
+                if (currentIndex !== -1 && currentIndex < orden.length - 1) {
+                    const nextId = orden[currentIndex + 1];
+                    const nextElement = document.getElementById(nextId);
+                    if (nextElement) {
+                        nextElement.focus();
+                        nextElement.select();
+                    }
+                }
+            }
+        }
+        
+        function calcularArqueo() {
+            let total = 0;
+            BILLETES.forEach(d => {
+                const cantidad = parseInt(document.getElementById(`bil_${d}`).value) || 0;
+                const subtotal = cantidad * d;
+                document.getElementById(`total_bil_${d}`).textContent = `₲ ${subtotal.toLocaleString()}`;
+                total += subtotal;
+            });
+            MONEDAS.forEach(d => {
+                const cantidad = parseInt(document.getElementById(`mon_${d}`).value) || 0;
+                const subtotal = cantidad * d;
+                document.getElementById(`total_mon_${d}`).textContent = `₲ ${subtotal.toLocaleString()}`;
+                total += subtotal;
+            });
+            
+            document.getElementById('totalEfectivo').textContent = `₲ ${total.toLocaleString()}`;
+            calcularRendicion();
+        }
+        
+        async function cargarVentaDelDia() {
+            const fecha = document.getElementById('arqueoFecha').value;
+            const { data } = await db.from('ventas').select('ingreso').eq('fecha', fecha);
+            
+            let total = 0;
+            if (data && data.length > 0) total = data.reduce((sum, v) => sum + v.ingreso, 0);
+            
+            ventaDelDiaActual = total;
+            document.getElementById('ventaDelDia').textContent = `₲ ${total.toLocaleString()}`;
+            
+            // Cargar gastos del arqueo si existe
+            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).single();
+            
+            if (arqueoData) {
+                const { data: gastosData } = await db.from('gastos').select('*').eq('arqueo_id', arqueoData.id);
+                if (gastosData) {
+                    gastos = gastosData.map(g => ({ concepto: g.concepto, monto: g.monto }));
+                    renderGastos();
+                }
+            } else {
+                gastos = [];
+                renderGastos();
+            }
+            
+            calcularRendicion();
+        }
+        
+        function calcularRendicion() {
+            const efectivo = calcularTotalEfectivo();
+            const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
+            const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
+            const pos = parseInt(document.getElementById('pos').value) || 0;
+            const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
+            
+            // Los gastos se SUMAN porque salieron de la caja que ya contamos
+            const totalTiene = efectivo + pedidosYa + pos + totalGastos;
+            const debeTener = ventaDelDiaActual + sencillo;
+            const diferencia = totalTiene - debeTener;
+            
+            document.getElementById('totalGastos').textContent = `₲ ${totalGastos.toLocaleString()}`;
+            document.getElementById('totalTiene').textContent = `₲ ${totalTiene.toLocaleString()}`;
+            document.getElementById('debeTener').textContent = `₲ ${debeTener.toLocaleString()}`;
+            document.getElementById('diferencia').textContent = `₲ ${diferencia.toLocaleString()}`;
+            document.getElementById('diferencia').style.color = diferencia >= 0 ? 'var(--success)' : 'var(--danger)';
+        }
+        
+        function calcularTotalEfectivo() {
+            let total = 0;
+            BILLETES.forEach(d => total += (parseInt(document.getElementById(`bil_${d}`).value) || 0) * d);
+            MONEDAS.forEach(d => total += (parseInt(document.getElementById(`mon_${d}`).value) || 0) * d);
+            return total;
+        }
+        
+        function agregarGasto() {
+            const concepto = prompt('Concepto del gasto:');
+            if (!concepto) return;
+            
+            const monto = parseInt(prompt('Monto del gasto (₲):'));
+            if (!monto || monto <= 0) return;
+            
+            gastos.push({ concepto, monto });
+            renderGastos();
+            calcularRendicion();
+        }
+        
+        function renderGastos() {
+            const container = document.getElementById('listaGastos');
+            
+            if (gastos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 1rem; background: var(--bg-main); border-radius: 8px;">No hay gastos registrados</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div style="background: var(--bg-main); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    ${gastos.map((g, i) => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 6px; margin-bottom: 0.5rem;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--secondary);">${g.concepto}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</span>
+                                <button onclick="eliminarGasto(${i})" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.875rem;">🗑️</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function eliminarGasto(index) {
+            if (confirm('¿Eliminar este gasto?')) {
+                gastos.splice(index, 1);
+                renderGastos();
+                calcularRendicion();
+            }
+        }
+        
+        async function guardarArqueo() {
+            const fecha = document.getElementById('arqueoFecha').value;
+            const responsable = document.getElementById('arqueoResponsable').value;
+            if (!fecha || !responsable) { showAlert('⚠️ Completa todos los campos', 'warning'); return; }
+            
+            const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
+            const efectivo = calcularTotalEfectivo();
+            const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
+            const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
+            const pos = parseInt(document.getElementById('pos').value) || 0;
+            
+            const arqueo = {
+                fecha, responsable, efectivo,
+                sencillo_inicio: sencillo,
+                pedidos_ya: pedidosYa,
+                pos: pos,
+                gastos: totalGastos,
+                diferencia: (efectivo + pedidosYa + pos + totalGastos) - (ventaDelDiaActual + sencillo)
+            };
+            
+            // Guardar arqueo
+            const { error } = await db.from('arqueos').upsert(arqueo, { onConflict: 'fecha' });
+            if (error) { showAlert('❌ Error: ' + error.message, 'danger'); return; }
+            
+            // Obtener ID del arqueo
+            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).single();
+            
+            if (arqueoData && gastos.length > 0) {
+                // Eliminar gastos anteriores de este arqueo
+                await db.from('gastos').delete().eq('arqueo_id', arqueoData.id);
+                
+                // Insertar nuevos gastos
+                const gastosConId = gastos.map(g => ({
+                    arqueo_id: arqueoData.id,
+                    concepto: g.concepto,
+                    monto: g.monto
+                }));
+                
+                await db.from('gastos').insert(gastosConId);
+            }
+            
+            showAlert('✅ Arqueo guardado correctamente', 'success');
+            
+            // Limpiar formulario después de guardar
+            limpiarFormularioArqueo();
+        }
+        
+        function limpiarFormularioArqueo() {
+            // Limpiar billetes
+            BILLETES.forEach(d => {
+                document.getElementById(`bil_${d}`).value = 0;
+                document.getElementById(`total_bil_${d}`).textContent = '₲ 0';
+            });
+            
+            // Limpiar monedas
+            MONEDAS.forEach(d => {
+                document.getElementById(`mon_${d}`).value = 0;
+                document.getElementById(`total_mon_${d}`).textContent = '₲ 0';
+            });
+            
+            // Limpiar campos de rendición
+            document.getElementById('sencilloInicio').value = 0;
+            document.getElementById('pedidosYa').value = 0;
+            document.getElementById('pos').value = 0;
+            
+            // Limpiar gastos
+            gastos = [];
+            renderGastos();
+            
+            // Recalcular todo
+            document.getElementById('totalEfectivo').textContent = '₲ 0';
+            calcularRendicion();
+        }
+        
+        function mostrarFormProducto() {
+            document.getElementById('formProducto').classList.remove('hidden');
+            document.getElementById('productoId').value = '';
+            document.getElementById('productoNombre').value = '';
+            document.getElementById('productoPrecio').value = '';
+            document.getElementById('productoCosto').value = '';
+        }
+        
+        function cancelarProducto() {
+            document.getElementById('formProducto').classList.add('hidden');
+        }
+        
+        async function guardarProducto() {
+            const id = document.getElementById('productoId').value;
+            const producto = {
+                nombre: document.getElementById('productoNombre').value.toUpperCase(),
+                categoria: document.getElementById('productoCategoria').value,
+                precio_venta: parseInt(document.getElementById('productoPrecio').value),
+                costo_unitario: parseInt(document.getElementById('productoCosto').value) || 0
+            };
+            
+            if (!producto.nombre || !producto.precio_venta) {
+                showAlert('⚠️ Completa los campos', 'warning');
+                return;
+            }
+            
+            const { error } = id 
+                ? await db.from('productos').update(producto).eq('id', id)
+                : await db.from('productos').insert(producto);
+            
+            if (error) showAlert('❌ Error: ' + error.message, 'danger');
+            else {
+                showAlert('✅ Producto guardado', 'success');
+                cancelarProducto();
+                await cargarProductos();
+                cargarListaProductos();
+                renderProductosVenta();
+            }
+        }
+        
+        async function cargarListaProductos() {
+            await cargarProductos();
+            if (productos.length === 0) {
+                document.getElementById('listaProductos').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay productos</p>';
+                return;
+            }
+            
+            document.getElementById('listaProductos').innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Precio Venta</th>
+                            <th>Costo</th>
+                            <th>Ganancia</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${productos.map(p => `
+                            <tr>
+                                <td style="font-weight: 600;">${p.nombre}</td>
+                                <td><span style="background: var(--bg-main); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">${p.categoria}</span></td>
+                                <td>₲ ${p.precio_venta.toLocaleString()}</td>
+                                <td>₲ ${p.costo_unitario.toLocaleString()}</td>
+                                <td style="color: var(--success); font-weight: 600;">₲ ${(p.precio_venta - p.costo_unitario).toLocaleString()}</td>
+                                <td>
+                                    <button onclick="editarProducto(${p.id})" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">✏️</button>
+                                    <button onclick="eliminarProducto(${p.id})" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;">🗑️</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        async function editarProducto(id) {
+            const p = productos.find(pr => pr.id === id);
+            if (!p) return;
+            
+            document.getElementById('productoId').value = p.id;
+            document.getElementById('productoNombre').value = p.nombre;
+            document.getElementById('productoCategoria').value = p.categoria;
+            document.getElementById('productoPrecio').value = p.precio_venta;
+            document.getElementById('productoCosto').value = p.costo_unitario;
+            document.getElementById('formProducto').classList.remove('hidden');
+        }
+        
+        async function eliminarProducto(id) {
+            if (!confirm('¿Eliminar este producto?')) return;
+            
+            const { error } = await db.from('productos').update({ activo: false }).eq('id', id);
+            if (error) showAlert('❌ Error: ' + error.message, 'danger');
+            else {
+                showAlert('✅ Producto eliminado', 'success');
+                await cargarProductos();
+                cargarListaProductos();
+                renderProductosVenta();
+            }
+        }
+        
+        async function cargarDashboard() {
+            const hoy = new Date();
+            const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
+            const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().split('T')[0];
+            
+            // Mes anterior para comparación
+            const primerDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1).toISOString().split('T')[0];
+            const ultimoDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0).toISOString().split('T')[0];
+            
+            // Obtener ventas del mes actual
+            const { data: ventasMes } = await db
+                .from('ventas')
+                .select('*')
+                .gte('fecha', primerDiaMes)
+                .lte('fecha', ultimoDiaMes);
+            
+            // Obtener ventas del mes anterior para comparación
+            const { data: ventasMesAnterior } = await db
+                .from('ventas')
+                .select('ingreso')
+                .gte('fecha', primerDiaMesAnterior)
+                .lte('fecha', ultimoDiaMesAnterior);
+            
+            // Obtener últimos 30 días para historial
+            const hace30dias = new Date();
+            hace30dias.setDate(hace30dias.getDate() - 30);
+            const { data: ventasUltimos30 } = await db
+                .from('ventas')
+                .select('fecha, ingreso, ganancia')
+                .gte('fecha', hace30dias.toISOString().split('T')[0])
+                .order('fecha', { ascending: true });
+            
+            if (!ventasMes || ventasMes.length === 0) {
+                mostrarDashboardVacio();
+                return;
+            }
+            
+            // ========== CÁLCULOS PRINCIPALES ==========
+            const totalMes = ventasMes.reduce((sum, v) => sum + v.ingreso, 0);
+            const totalMesAnterior = ventasMesAnterior ? ventasMesAnterior.reduce((sum, v) => sum + v.ingreso, 0) : 0;
+            const gananciaMes = ventasMes.reduce((sum, v) => sum + v.ganancia, 0);
+            const totalUnidades = ventasMes.reduce((sum, v) => sum + v.vendidos, 0);
+            const totalProduccion = ventasMes.reduce((sum, v) => sum + v.produccion, 0);
+            const totalSobrantes = ventasMes.reduce((sum, v) => sum + v.sobrante, 0);
+            const totalCostos = totalMes - gananciaMes;
+            
+            // Días trabajados
+            const fechasUnicas = [...new Set(ventasMes.map(v => v.fecha))];
+            const diasTrabajados = fechasUnicas.length;
+            const promedioDiario = diasTrabajados > 0 ? totalMes / diasTrabajados : 0;
+            
+            // Mejor y peor día
+            const ventasPorDia = {};
+            ventasMes.forEach(v => {
+                if (!ventasPorDia[v.fecha]) ventasPorDia[v.fecha] = 0;
+                ventasPorDia[v.fecha] += v.ingreso;
+            });
+            
+            const mejorDiaVenta = Math.max(...Object.values(ventasPorDia));
+            const peorDiaVenta = Math.min(...Object.values(ventasPorDia));
+            const fechaMejorDia = Object.keys(ventasPorDia).find(f => ventasPorDia[f] === mejorDiaVenta);
+            const fechaPeorDia = Object.keys(ventasPorDia).find(f => ventasPorDia[f] === peorDiaVenta);
+            
+            // Eficiencia
+            const eficiencia = totalProduccion > 0 ? ((totalUnidades / totalProduccion) * 100).toFixed(1) : 0;
+            
+            // Margen de ganancia
+            const margenGanancia = totalMes > 0 ? ((gananciaMes / totalMes) * 100).toFixed(1) : 0;
+            
+            // Comparación con mes anterior
+            const cambioMes = totalMesAnterior > 0 ? (((totalMes - totalMesAnterior) / totalMesAnterior) * 100).toFixed(1) : 0;
+            
+            // ========== ACTUALIZAR UI - ESTADÍSTICAS PRINCIPALES ==========
+            document.getElementById('ventaMes').textContent = `₲ ${totalMes.toLocaleString()}`;
+            document.getElementById('ventaMesComparacion').textContent = cambioMes > 0 
+                ? `↗ +${cambioMes}% vs mes anterior` 
+                : cambioMes < 0 ? `↘ ${cambioMes}% vs mes anterior` : 'Igual que mes anterior';
+            document.getElementById('ventaMesComparacion').style.color = cambioMes >= 0 ? '#28a745' : '#dc3545';
+            
+            document.getElementById('gananciaMes').textContent = `₲ ${gananciaMes.toLocaleString()}`;
+            document.getElementById('margenMes').textContent = `Margen: ${margenGanancia}%`;
+            
+            document.getElementById('promedioDiario').textContent = `₲ ${Math.round(promedioDiario).toLocaleString()}`;
+            document.getElementById('diasTrabajados').textContent = `${diasTrabajados} días trabajados`;
+            
+            // Estadísticas secundarias
+            document.getElementById('mejorDia').textContent = `₲ ${mejorDiaVenta.toLocaleString()}`;
+            document.getElementById('mejorDiaFecha').textContent = new Date(fechaMejorDia + 'T00:00:00').toLocaleDateString('es-PY', { day: '2-digit', month: 'short' });
+            
+            document.getElementById('peorDia').textContent = `₲ ${peorDiaVenta.toLocaleString()}`;
+            document.getElementById('peorDiaFecha').textContent = new Date(fechaPeorDia + 'T00:00:00').toLocaleDateString('es-PY', { day: '2-digit', month: 'short' });
+            
+            document.getElementById('totalUnidades').textContent = totalUnidades.toLocaleString();
+            
+            // Eficiencia
+            document.getElementById('totalProduccion').textContent = totalProduccion.toLocaleString();
+            document.getElementById('totalVendidos').textContent = totalUnidades.toLocaleString();
+            document.getElementById('totalSobrantes').textContent = totalSobrantes.toLocaleString();
+            document.getElementById('eficiencia').textContent = eficiencia + '%';
+            
+            // Análisis financiero
+            document.getElementById('ingresosTotal').textContent = `₲ ${totalMes.toLocaleString()}`;
+            document.getElementById('costosTotal').textContent = `₲ ${totalCostos.toLocaleString()}`;
+            document.getElementById('gananciaTotal').textContent = `₲ ${gananciaMes.toLocaleString()}`;
+            document.getElementById('margenGanancia').textContent = margenGanancia + '%';
+            
+            // ========== TOP 10 PRODUCTOS ==========
+            const productosSuma = {};
+            ventasMes.forEach(v => {
+                if (!productosSuma[v.producto_id]) {
+                    productosSuma[v.producto_id] = { ingreso: 0, vendidos: 0, ganancia: 0, produccion: 0, sobrante: 0 };
+                }
+                productosSuma[v.producto_id].ingreso += v.ingreso;
+                productosSuma[v.producto_id].vendidos += v.vendidos;
+                productosSuma[v.producto_id].ganancia += v.ganancia;
+                productosSuma[v.producto_id].produccion += v.produccion;
+                productosSuma[v.producto_id].sobrante += v.sobrante;
+            });
+            
+            const topArray = Object.entries(productosSuma)
+                .map(([id, data]) => ({
+                    producto: productos.find(p => p.id == id),
+                    ...data,
+                    eficiencia: data.produccion > 0 ? ((data.vendidos / data.produccion) * 100).toFixed(1) : 0
+                }))
+                .filter(p => p.producto)
+                .sort((a, b) => b.ingreso - a.ingreso)
+                .slice(0, 10);
+            
+            const totalIngresoTop = topArray.reduce((sum, p) => sum + p.ingreso, 0);
+            
+            document.getElementById('topProductos').innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th>Vendidos</th>
+                            <th>Ingresos</th>
+                            <th>% Total</th>
+                            <th>Ganancia</th>
+                            <th>Eficiencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topArray.map((p, i) => {
+                            const porcentaje = ((p.ingreso / totalMes) * 100).toFixed(1);
+                            return `
+                                <tr>
+                                    <td style="font-weight: 700;">${i + 1}</td>
+                                    <td style="font-weight: 600;">${p.producto.nombre}</td>
+                                    <td>${p.vendidos}</td>
+                                    <td style="font-weight: 600;">₲ ${p.ingreso.toLocaleString()}</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="flex: 1; background: var(--border); height: 8px; border-radius: 4px; overflow: hidden;">
+                                                <div style="width: ${porcentaje}%; background: var(--primary); height: 100%;"></div>
+                                            </div>
+                                            <span style="font-weight: 600; font-size: 0.875rem;">${porcentaje}%</span>
+                                        </div>
+                                    </td>
+                                    <td style="color: var(--success); font-weight: 600;">₲ ${p.ganancia.toLocaleString()}</td>
+                                    <td style="font-weight: 600; color: ${p.eficiencia >= 80 ? 'var(--success)' : p.eficiencia >= 60 ? 'var(--accent)' : 'var(--danger)'};">${p.eficiencia}%</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            // ========== VENTAS POR CATEGORÍA ==========
+            const ventasPorCat = {};
+            ventasMes.forEach(v => {
+                const prod = productos.find(p => p.id === v.producto_id);
+                if (prod) {
+                    const cat = prod.categoria;
+                    if (!ventasPorCat[cat]) {
+                        ventasPorCat[cat] = { ingreso: 0, vendidos: 0, ganancia: 0 };
+                    }
+                    ventasPorCat[cat].ingreso += v.ingreso;
+                    ventasPorCat[cat].vendidos += v.vendidos;
+                    ventasPorCat[cat].ganancia += v.ganancia;
+                }
+            });
+            
+            document.getElementById('ventasPorCategoria').innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    ${Object.entries(ventasPorCat).sort((a, b) => b[1].ingreso - a[1].ingreso).map(([cat, data]) => {
+                        const porcentaje = ((data.ingreso / totalMes) * 100).toFixed(1);
+                        return `
+                            <div style="background: var(--bg-main); padding: 1rem; border-radius: 8px;">
+                                <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">${cat}</div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary); font-size: 1.25rem; margin-bottom: 0.5rem;">₲ ${data.ingreso.toLocaleString()}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.25rem;">${data.vendidos} unidades</div>
+                                <div style="font-size: 0.875rem; color: var(--success); font-weight: 600;">Ganancia: ₲ ${data.ganancia.toLocaleString()}</div>
+                                <div style="background: var(--border); height: 6px; border-radius: 3px; margin-top: 0.5rem; overflow: hidden;">
+                                    <div style="width: ${porcentaje}%; background: var(--primary); height: 100%;"></div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem; text-align: right;">${porcentaje}% del total</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            // ========== VENTAS POR DÍA DE LA SEMANA ==========
+            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const ventasPorDiaSemana = {};
+            
+            ventasMes.forEach(v => {
+                const diaSemana = new Date(v.fecha + 'T00:00:00').getDay();
+                if (!ventasPorDiaSemana[diaSemana]) {
+                    ventasPorDiaSemana[diaSemana] = { ingreso: 0, dias: 0 };
+                }
+                ventasPorDiaSemana[diaSemana].ingreso += v.ingreso;
+            });
+            
+            fechasUnicas.forEach(fecha => {
+                const diaSemana = new Date(fecha + 'T00:00:00').getDay();
+                if (ventasPorDiaSemana[diaSemana]) {
+                    ventasPorDiaSemana[diaSemana].dias++;
+                }
+            });
+            
+            const maxVentaDia = Math.max(...Object.values(ventasPorDiaSemana).map(d => d.dias > 0 ? d.ingreso / d.dias : 0));
+            
+            document.getElementById('ventasPorDiaSemana').innerHTML = `
+                <div style="margin-top: 1rem;">
+                    ${diasSemana.map((dia, index) => {
+                        const data = ventasPorDiaSemana[index];
+                        const promedio = data && data.dias > 0 ? data.ingreso / data.dias : 0;
+                        const porcentaje = maxVentaDia > 0 ? (promedio / maxVentaDia) * 100 : 0;
+                        
+                        return `
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-main); border-radius: 6px; margin-bottom: 0.5rem;">
+                                <div style="min-width: 100px; font-weight: 600;">${dia}</div>
+                                <div style="flex: 1; background: var(--border); height: 24px; border-radius: 4px; overflow: hidden;">
+                                    <div style="width: ${porcentaje}%; background: ${porcentaje >= 80 ? 'var(--success)' : porcentaje >= 50 ? 'var(--primary)' : 'var(--accent)'}; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; font-weight: 600;">
+                                        ${promedio > 0 ? '₲ ' + Math.round(promedio).toLocaleString() : ''}
+                                    </div>
+                                </div>
+                                <div style="min-width: 60px; text-align: right; font-size: 0.875rem; color: var(--text-light);">
+                                    ${data ? data.dias + ' días' : 'No hay datos'}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            // ========== PRODUCTOS CON MÁS SOBRANTES ==========
+            const productosSobrantesArray = topArray
+                .filter(p => p.sobrante > 0)
+                .sort((a, b) => b.sobrante - a.sobrante)
+                .slice(0, 5);
+            
+            if (productosSobrantesArray.length > 0) {
+                document.getElementById('productosSobrantes').innerHTML = `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Producido</th>
+                                <th>Vendidos</th>
+                                <th>Sobrantes</th>
+                                <th>% Desperdicio</th>
+                                <th>Pérdida Estimada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productosSobrantesArray.map(p => {
+                                const porcentajeDesperdicio = ((p.sobrante / p.produccion) * 100).toFixed(1);
+                                const perdida = p.sobrante * p.producto.costo_unitario;
+                                return `
+                                    <tr>
+                                        <td style="font-weight: 600;">${p.producto.nombre}</td>
+                                        <td>${p.produccion}</td>
+                                        <td style="color: var(--success); font-weight: 600;">${p.vendidos}</td>
+                                        <td style="color: var(--danger); font-weight: 600;">${p.sobrante}</td>
+                                        <td style="font-weight: 600; color: ${porcentajeDesperdicio >= 30 ? 'var(--danger)' : porcentajeDesperdicio >= 15 ? 'var(--accent)' : 'var(--text-light)'};">${porcentajeDesperdicio}%</td>
+                                        <td style="color: var(--danger); font-weight: 600;">₲ ${perdida.toLocaleString()}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                document.getElementById('productosSobrantes').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">¡Excelente! No hay desperdicios significativos</p>';
+            }
+            
+            // ========== HISTORIAL DE VENTAS (Últimos 30 días) ==========
+            if (ventasUltimos30 && ventasUltimos30.length > 0) {
+                const ventasPorDiaHistorial = {};
+                ventasUltimos30.forEach(v => {
+                    if (!ventasPorDiaHistorial[v.fecha]) {
+                        ventasPorDiaHistorial[v.fecha] = { ingreso: 0, ganancia: 0 };
+                    }
+                    ventasPorDiaHistorial[v.fecha].ingreso += v.ingreso;
+                    ventasPorDiaHistorial[v.fecha].ganancia += v.ganancia;
+                });
+                
+                const maxIngresoHistorial = Math.max(...Object.values(ventasPorDiaHistorial).map(d => d.ingreso));
+                
+                document.getElementById('historialVentas').innerHTML = `
+                    <div style="margin-top: 1rem;">
+                        ${Object.entries(ventasPorDiaHistorial).reverse().map(([fecha, data]) => {
+                            const porcentaje = (data.ingreso / maxIngresoHistorial) * 100;
+                            const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short' });
+                            
+                            return `
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem; border-bottom: 1px solid var(--border);">
+                                    <div style="min-width: 120px; font-size: 0.875rem;">${fechaFormateada}</div>
+                                    <div style="flex: 1; background: var(--border); height: 20px; border-radius: 4px; overflow: hidden;">
+                                        <div style="width: ${porcentaje}%; background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%); height: 100%;"></div>
+                                    </div>
+                                    <div style="min-width: 120px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600;">₲ ${data.ingreso.toLocaleString()}</div>
+                                    <div style="min-width: 100px; text-align: right; font-size: 0.875rem; color: var(--success); font-weight: 600;">+₲ ${data.ganancia.toLocaleString()}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+        }
+        
+        function mostrarDashboardVacio() {
+            document.getElementById('ventaMes').textContent = '₲ 0';
+            document.getElementById('gananciaMes').textContent = '₲ 0';
+            document.getElementById('promedioDiario').textContent = '₲ 0';
+            document.getElementById('topProductos').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos del mes actual</p>';
+        }
+    </script>
+</body>
+</html>
