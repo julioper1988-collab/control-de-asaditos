@@ -523,15 +523,33 @@
         </div>
         
         <div id="tab-dashboard" class="tab-content">
+            <!-- Filtro de Fechas -->
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+                    <div class="form-group" style="margin: 0; min-width: 200px;">
+                        <label class="form-label">Desde</label>
+                        <input type="date" id="dashboardDesde" class="form-input">
+                    </div>
+                    <div class="form-group" style="margin: 0; min-width: 200px;">
+                        <label class="form-label">Hasta</label>
+                        <input type="date" id="dashboardHasta" class="form-input">
+                    </div>
+                    <button onclick="cargarDashboard()" class="btn btn-primary" style="margin-top: 1.75rem;">🔍 Actualizar</button>
+                    <button onclick="rangoMesActual()" class="btn btn-secondary" style="margin-top: 1.75rem;">📅 Mes Actual</button>
+                    <button onclick="rangoUltimos7Dias()" class="btn btn-secondary" style="margin-top: 1.75rem;">📆 Últimos 7 días</button>
+                    <button onclick="rangoUltimos30Dias()" class="btn btn-secondary" style="margin-top: 1.75rem;">📊 Últimos 30 días</button>
+                </div>
+            </div>
+            
             <!-- Estadísticas Principales -->
             <div class="grid grid-3">
                 <div class="stat-card">
-                    <div class="stat-label">Venta Total del Mes</div>
+                    <div class="stat-label">Venta Total del Período</div>
                     <div class="stat-value" id="ventaMes">₲ 0</div>
                     <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="ventaMesComparacion"></div>
                 </div>
                 <div class="stat-card" style="background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%);">
-                    <div class="stat-label">Ganancia del Mes</div>
+                    <div class="stat-label">Ganancia del Período</div>
                     <div class="stat-value" id="gananciaMes">₲ 0</div>
                     <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="margenMes"></div>
                 </div>
@@ -539,6 +557,34 @@
                     <div class="stat-label">Promedio Diario</div>
                     <div class="stat-value" id="promedioDiario">₲ 0</div>
                     <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="diasTrabajados"></div>
+                </div>
+            </div>
+            
+            <!-- Métodos de Pago -->
+            <div class="card">
+                <div class="card-header">💳 Análisis por Método de Pago</div>
+                <div class="grid grid-3" style="margin-top: 1rem;">
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">💵 Efectivo</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace;" id="totalEfectivoPagos">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajeEfectivo">0%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">💳 POS/Tarjeta</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace;" id="totalPOS">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajePOS">0%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🛵 Pedidos Ya</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', monospace;" id="totalPedidosYa">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajePedidosYa">0%</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 600;">Total Gastos del Período:</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.25rem;" id="totalGastosPeriodo">₲ 0</span>
+                    </div>
                 </div>
             </div>
             
@@ -696,7 +742,7 @@
             db = createClient(SUPABASE_URL, SUPABASE_KEY);
             
             await cargarProductos();
-            renderProductosVenta();
+            await renderProductosVenta();
             renderDenominaciones();
             renderGastos();
             
@@ -712,6 +758,12 @@
             hace30dias.setDate(hace30dias.getDate() - 30);
             document.getElementById('historialDesde').value = hace30dias.toISOString().split('T')[0];
             document.getElementById('historialHasta').value = today;
+            
+            // Establecer rango del dashboard (mes actual)
+            const primerDiaMesActual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const ultimoDiaMesActual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+            document.getElementById('dashboardDesde').value = primerDiaMesActual.toISOString().split('T')[0];
+            document.getElementById('dashboardHasta').value = ultimoDiaMesActual.toISOString().split('T')[0];
             
             // Cargar datos de venta (sobrantes del día anterior si aplica)
             await cargarDatosVenta();
@@ -1241,16 +1293,46 @@
             }
         }
         
-        function renderProductosVenta() {
+        async function renderProductosVenta() {
             const container = document.getElementById('productosVenta');
             if (productos.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay productos</p>';
                 return;
             }
             
-            container.innerHTML = productos.map((p, index) => `
+            // Obtener ventas del mes para ordenar productos
+            const hoy = new Date();
+            const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
+            const { data: ventasMes } = await db
+                .from('ventas')
+                .select('producto_id, vendidos')
+                .gte('fecha', primerDiaMes);
+            
+            // Calcular total vendido por producto este mes
+            const ventasPorProducto = {};
+            if (ventasMes) {
+                ventasMes.forEach(v => {
+                    if (!ventasPorProducto[v.producto_id]) {
+                        ventasPorProducto[v.producto_id] = 0;
+                    }
+                    ventasPorProducto[v.producto_id] += v.vendidos;
+                });
+            }
+            
+            // Ordenar productos por ventas del mes (mayor a menor)
+            const productosOrdenados = [...productos].sort((a, b) => {
+                const ventasA = ventasPorProducto[a.id] || 0;
+                const ventasB = ventasPorProducto[b.id] || 0;
+                return ventasB - ventasA; // Mayor a menor
+            });
+            
+            container.innerHTML = productosOrdenados.map((p, index) => `
                 <div class="product-row">
-                    <div class="product-name">${p.nombre}</div>
+                    <div class="product-name">
+                        ${ventasPorProducto[p.id] ? '<span style="color: var(--primary); font-weight: 800; margin-right: 0.5rem;">★</span>' : ''}
+                        ${p.nombre}
+                        ${ventasPorProducto[p.id] ? `<span style="font-size: 0.75rem; color: var(--text-light); margin-left: 0.5rem;">(${ventasPorProducto[p.id]} vendidos)</span>` : ''}
+                    </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Sobrante Ayer</label>
                         <input type="number" id="sobrant_ant_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;">
@@ -1288,15 +1370,19 @@
             calcularResumen();
         }
         
-        function handleEnterVentas(event, currentId) {
+        async function handleEnterVentas(event, currentId) {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 
-                // Crear orden de campos dinámicamente
+                // Obtener el orden actual de productos en el DOM
+                const productRows = document.querySelectorAll('.product-row');
                 const orden = [];
-                productos.forEach(p => {
-                    orden.push(`prod_hoy_${p.id}`);
-                    orden.push(`sobr_${p.id}`);
+                
+                productRows.forEach(row => {
+                    const prodHoyInput = row.querySelector('[id^="prod_hoy_"]');
+                    const sobrInput = row.querySelector('[id^="sobr_"][id$!="_ant_"]');
+                    if (prodHoyInput) orden.push(prodHoyInput.id);
+                    if (sobrInput && sobrInput.id.startsWith('sobr_')) orden.push(sobrInput.id);
                 });
                 
                 const currentIndex = orden.indexOf(currentId);
@@ -1651,7 +1737,7 @@
                 cancelarProducto();
                 await cargarProductos();
                 cargarListaProductos();
-                renderProductosVenta();
+                await renderProductosVenta();
             }
         }
         
@@ -1714,32 +1800,50 @@
                 showAlert('✅ Producto eliminado', 'success');
                 await cargarProductos();
                 cargarListaProductos();
-                renderProductosVenta();
+                await renderProductosVenta();
             }
         }
         
         async function cargarDashboard() {
-            const hoy = new Date();
-            const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
-            const ultimoDiaMes = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0).toISOString().split('T')[0];
+            // Obtener rango de fechas del filtro
+            const desde = document.getElementById('dashboardDesde').value;
+            const hasta = document.getElementById('dashboardHasta').value;
             
-            // Mes anterior para comparación
-            const primerDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth() - 1, 1).toISOString().split('T')[0];
-            const ultimoDiaMesAnterior = new Date(hoy.getFullYear(), hoy.getMonth(), 0).toISOString().split('T')[0];
+            if (!desde || !hasta) {
+                showAlert('⚠️ Selecciona un rango de fechas', 'warning');
+                return;
+            }
             
-            // Obtener ventas del mes actual
-            const { data: ventasMes } = await db
+            // Calcular período anterior para comparación (mismo número de días)
+            const diasDiferencia = Math.ceil((new Date(hasta) - new Date(desde)) / (1000 * 60 * 60 * 24));
+            const fechaInicioAnterior = new Date(desde);
+            fechaInicioAnterior.setDate(fechaInicioAnterior.getDate() - diasDiferencia - 1);
+            const fechaFinAnterior = new Date(desde);
+            fechaFinAnterior.setDate(fechaFinAnterior.getDate() - 1);
+            
+            const primerDiaAnterior = fechaInicioAnterior.toISOString().split('T')[0];
+            const ultimoDiaAnterior = fechaFinAnterior.toISOString().split('T')[0];
+            
+            // Obtener ventas del período
+            const { data: ventasPeriodo } = await db
                 .from('ventas')
                 .select('*')
-                .gte('fecha', primerDiaMes)
-                .lte('fecha', ultimoDiaMes);
+                .gte('fecha', desde)
+                .lte('fecha', hasta);
             
-            // Obtener ventas del mes anterior para comparación
-            const { data: ventasMesAnterior } = await db
+            // Obtener ventas del período anterior para comparación
+            const { data: ventasPeriodoAnterior } = await db
                 .from('ventas')
                 .select('ingreso')
-                .gte('fecha', primerDiaMesAnterior)
-                .lte('fecha', ultimoDiaMesAnterior);
+                .gte('fecha', primerDiaAnterior)
+                .lte('fecha', ultimoDiaAnterior);
+            
+            // Obtener arqueos del período para POS y Pedidos Ya
+            const { data: arqueosPeriodo } = await db
+                .from('arqueos')
+                .select('*')
+                .gte('fecha', desde)
+                .lte('fecha', hasta);
             
             // Obtener últimos 30 días para historial
             const hace30dias = new Date();
@@ -1750,28 +1854,43 @@
                 .gte('fecha', hace30dias.toISOString().split('T')[0])
                 .order('fecha', { ascending: true });
             
-            if (!ventasMes || ventasMes.length === 0) {
+            if (!ventasPeriodo || ventasPeriodo.length === 0) {
                 mostrarDashboardVacio();
                 return;
             }
             
             // ========== CÁLCULOS PRINCIPALES ==========
-            const totalMes = ventasMes.reduce((sum, v) => sum + v.ingreso, 0);
-            const totalMesAnterior = ventasMesAnterior ? ventasMesAnterior.reduce((sum, v) => sum + v.ingreso, 0) : 0;
-            const gananciaMes = ventasMes.reduce((sum, v) => sum + v.ganancia, 0);
-            const totalUnidades = ventasMes.reduce((sum, v) => sum + v.vendidos, 0);
-            const totalProduccion = ventasMes.reduce((sum, v) => sum + v.produccion, 0);
-            const totalSobrantes = ventasMes.reduce((sum, v) => sum + v.sobrante, 0);
-            const totalCostos = totalMes - gananciaMes;
+            const totalPeriodo = ventasPeriodo.reduce((sum, v) => sum + v.ingreso, 0);
+            const totalPeriodoAnterior = ventasPeriodoAnterior ? ventasPeriodoAnterior.reduce((sum, v) => sum + v.ingreso, 0) : 0;
+            const gananciaPeriodo = ventasPeriodo.reduce((sum, v) => sum + v.ganancia, 0);
+            const totalUnidades = ventasPeriodo.reduce((sum, v) => sum + v.vendidos, 0);
+            const totalProduccion = ventasPeriodo.reduce((sum, v) => sum + v.produccion, 0);
+            const totalSobrantes = ventasPeriodo.reduce((sum, v) => sum + v.sobrante, 0);
+            const totalCostos = totalPeriodo - gananciaPeriodo;
+            
+            // Cálculos de arqueos (POS, Pedidos Ya, Gastos, Efectivo)
+            let totalPOS = 0;
+            let totalPedidosYa = 0;
+            let totalGastos = 0;
+            let totalEfectivo = 0;
+            
+            if (arqueosPeriodo) {
+                totalPOS = arqueosPeriodo.reduce((sum, a) => sum + (a.pos || 0), 0);
+                totalPedidosYa = arqueosPeriodo.reduce((sum, a) => sum + (a.pedidos_ya || 0), 0);
+                totalGastos = arqueosPeriodo.reduce((sum, a) => sum + (a.gastos || 0), 0);
+                totalEfectivo = arqueosPeriodo.reduce((sum, a) => sum + (a.efectivo || 0), 0);
+            }
+            
+            const totalPagos = totalEfectivo + totalPOS + totalPedidosYa;
             
             // Días trabajados
-            const fechasUnicas = [...new Set(ventasMes.map(v => v.fecha))];
+            const fechasUnicas = [...new Set(ventasPeriodo.map(v => v.fecha))];
             const diasTrabajados = fechasUnicas.length;
-            const promedioDiario = diasTrabajados > 0 ? totalMes / diasTrabajados : 0;
+            const promedioDiario = diasTrabajados > 0 ? totalPeriodo / diasTrabajados : 0;
             
             // Mejor y peor día
             const ventasPorDia = {};
-            ventasMes.forEach(v => {
+            ventasPeriodo.forEach(v => {
                 if (!ventasPorDia[v.fecha]) ventasPorDia[v.fecha] = 0;
                 ventasPorDia[v.fecha] += v.ingreso;
             });
@@ -1785,23 +1904,40 @@
             const eficiencia = totalProduccion > 0 ? ((totalUnidades / totalProduccion) * 100).toFixed(1) : 0;
             
             // Margen de ganancia
-            const margenGanancia = totalMes > 0 ? ((gananciaMes / totalMes) * 100).toFixed(1) : 0;
+            const margenGanancia = totalPeriodo > 0 ? ((gananciaPeriodo / totalPeriodo) * 100).toFixed(1) : 0;
             
-            // Comparación con mes anterior
-            const cambioMes = totalMesAnterior > 0 ? (((totalMes - totalMesAnterior) / totalMesAnterior) * 100).toFixed(1) : 0;
+            // Comparación con período anterior
+            const cambioPeriodo = totalPeriodoAnterior > 0 ? (((totalPeriodo - totalPeriodoAnterior) / totalPeriodoAnterior) * 100).toFixed(1) : 0;
+            
+            // Porcentajes de métodos de pago
+            const porcentajeEfectivo = totalPagos > 0 ? ((totalEfectivo / totalPagos) * 100).toFixed(1) : 0;
+            const porcentajePOS = totalPagos > 0 ? ((totalPOS / totalPagos) * 100).toFixed(1) : 0;
+            const porcentajePedidosYa = totalPagos > 0 ? ((totalPedidosYa / totalPagos) * 100).toFixed(1) : 0;
             
             // ========== ACTUALIZAR UI - ESTADÍSTICAS PRINCIPALES ==========
-            document.getElementById('ventaMes').textContent = `₲ ${totalMes.toLocaleString()}`;
-            document.getElementById('ventaMesComparacion').textContent = cambioMes > 0 
-                ? `↗ +${cambioMes}% vs mes anterior` 
-                : cambioMes < 0 ? `↘ ${cambioMes}% vs mes anterior` : 'Igual que mes anterior';
-            document.getElementById('ventaMesComparacion').style.color = cambioMes >= 0 ? '#28a745' : '#dc3545';
+            document.getElementById('ventaMes').textContent = `₲ ${totalPeriodo.toLocaleString()}`;
+            document.getElementById('ventaMesComparacion').textContent = cambioPeriodo > 0 
+                ? `↗ +${cambioPeriodo}% vs período anterior` 
+                : cambioPeriodo < 0 ? `↘ ${cambioPeriodo}% vs período anterior` : 'Igual que período anterior';
+            document.getElementById('ventaMesComparacion').style.color = cambioPeriodo >= 0 ? '#28a745' : '#dc3545';
             
-            document.getElementById('gananciaMes').textContent = `₲ ${gananciaMes.toLocaleString()}`;
+            document.getElementById('gananciaMes').textContent = `₲ ${gananciaPeriodo.toLocaleString()}`;
             document.getElementById('margenMes').textContent = `Margen: ${margenGanancia}%`;
             
             document.getElementById('promedioDiario').textContent = `₲ ${Math.round(promedioDiario).toLocaleString()}`;
             document.getElementById('diasTrabajados').textContent = `${diasTrabajados} días trabajados`;
+            
+            // Métodos de pago
+            document.getElementById('totalEfectivoPagos').textContent = `₲ ${totalEfectivo.toLocaleString()}`;
+            document.getElementById('porcentajeEfectivo').textContent = `${porcentajeEfectivo}% del total`;
+            
+            document.getElementById('totalPOS').textContent = `₲ ${totalPOS.toLocaleString()}`;
+            document.getElementById('porcentajePOS').textContent = `${porcentajePOS}% del total`;
+            
+            document.getElementById('totalPedidosYa').textContent = `₲ ${totalPedidosYa.toLocaleString()}`;
+            document.getElementById('porcentajePedidosYa').textContent = `${porcentajePedidosYa}% del total`;
+            
+            document.getElementById('totalGastosPeriodo').textContent = `₲ ${totalGastos.toLocaleString()}`;
             
             // Estadísticas secundarias
             document.getElementById('mejorDia').textContent = `₲ ${mejorDiaVenta.toLocaleString()}`;
@@ -1826,7 +1962,7 @@
             
             // ========== TOP 10 PRODUCTOS ==========
             const productosSuma = {};
-            ventasMes.forEach(v => {
+            ventasPeriodo.forEach(v => {
                 if (!productosSuma[v.producto_id]) {
                     productosSuma[v.producto_id] = { ingreso: 0, vendidos: 0, ganancia: 0, produccion: 0, sobrante: 0 };
                 }
@@ -1864,7 +2000,7 @@
                     </thead>
                     <tbody>
                         ${topArray.map((p, i) => {
-                            const porcentaje = ((p.ingreso / totalMes) * 100).toFixed(1);
+                            const porcentaje = ((p.ingreso / totalPeriodo) * 100).toFixed(1);
                             return `
                                 <tr>
                                     <td style="font-weight: 700;">${i + 1}</td>
@@ -1890,7 +2026,7 @@
             
             // ========== VENTAS POR CATEGORÍA ==========
             const ventasPorCat = {};
-            ventasMes.forEach(v => {
+            ventasPeriodo.forEach(v => {
                 const prod = productos.find(p => p.id === v.producto_id);
                 if (prod) {
                     const cat = prod.categoria;
@@ -1906,7 +2042,7 @@
             document.getElementById('ventasPorCategoria').innerHTML = `
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
                     ${Object.entries(ventasPorCat).sort((a, b) => b[1].ingreso - a[1].ingreso).map(([cat, data]) => {
-                        const porcentaje = ((data.ingreso / totalMes) * 100).toFixed(1);
+                        const porcentaje = ((data.ingreso / totalPeriodo) * 100).toFixed(1);
                         return `
                             <div style="background: var(--bg-main); padding: 1rem; border-radius: 8px;">
                                 <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">${cat}</div>
@@ -1927,7 +2063,7 @@
             const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
             const ventasPorDiaSemana = {};
             
-            ventasMes.forEach(v => {
+            ventasPeriodo.forEach(v => {
                 const diaSemana = new Date(v.fecha + 'T00:00:00').getDay();
                 if (!ventasPorDiaSemana[diaSemana]) {
                     ventasPorDiaSemana[diaSemana] = { ingreso: 0, dias: 0 };
@@ -2042,6 +2178,39 @@
                     </div>
                 `;
             }
+        }
+        
+        function rangoMesActual() {
+            const hoy = new Date();
+            const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+            
+            document.getElementById('dashboardDesde').value = primerDia.toISOString().split('T')[0];
+            document.getElementById('dashboardHasta').value = ultimoDia.toISOString().split('T')[0];
+            
+            cargarDashboard();
+        }
+        
+        function rangoUltimos7Dias() {
+            const hoy = new Date();
+            const hace7dias = new Date();
+            hace7dias.setDate(hace7dias.getDate() - 7);
+            
+            document.getElementById('dashboardDesde').value = hace7dias.toISOString().split('T')[0];
+            document.getElementById('dashboardHasta').value = hoy.toISOString().split('T')[0];
+            
+            cargarDashboard();
+        }
+        
+        function rangoUltimos30Dias() {
+            const hoy = new Date();
+            const hace30dias = new Date();
+            hace30dias.setDate(hace30dias.getDate() - 30);
+            
+            document.getElementById('dashboardDesde').value = hace30dias.toISOString().split('T')[0];
+            document.getElementById('dashboardHasta').value = hoy.toISOString().split('T')[0];
+            
+            cargarDashboard();
         }
         
         function mostrarDashboardVacio() {
