@@ -426,17 +426,17 @@
                 <div class="grid grid-2">
                     <div class="form-group">
                         <label class="form-label">Sencillo de Inicio</label>
-                        <input type="number" id="sencilloInicio" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnter(event, 'sencilloInicio')">
+                        <input type="number" id="sencilloInicio" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'sencilloInicio')">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Pedidos Ya</label>
-                        <input type="number" id="pedidosYa" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnter(event, 'pedidosYa')">
+                        <input type="number" id="pedidosYa" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pedidosYa')">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">POS / Tarjeta</label>
-                        <input type="number" id="pos" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnter(event, 'pos')">
+                        <input type="number" id="pos" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pos')">
                     </div>
                 </div>
                 
@@ -1161,10 +1161,32 @@
                     
                     if (!arqueoAnterior) {
                         // No hay arqueo para el día con ventas
-                        if (!confirm(`⚠️ ADVERTENCIA: El día ${new Date(fechaAnteriorCargada + 'T00:00:00').toLocaleDateString('es-PY')} tiene ventas registradas pero NO tiene arqueo de caja guardado.\n\n¿Estás seguro de cambiar de fecha sin completar el arqueo?`)) {
+                        const fechaFormateada = new Date(fechaAnteriorCargada + 'T00:00:00').toLocaleDateString('es-PY');
+                        
+                        // Crear un modal de advertencia más visible
+                        const continuar = confirm(
+                            `🚨 ADVERTENCIA IMPORTANTE 🚨\n\n` +
+                            `El día ${fechaFormateada} tiene VENTAS REGISTRADAS\n` +
+                            `pero NO tiene ARQUEO DE CAJA guardado.\n\n` +
+                            `Esto significa que:\n` +
+                            `• No registraste el conteo de dinero\n` +
+                            `• No hay control de efectivo/POS/Pedidos Ya\n` +
+                            `• El cierre del día está INCOMPLETO\n\n` +
+                            `Se recomienda CANCELAR y completar el arqueo ahora.\n\n` +
+                            `¿Estás SEGURO de cambiar de fecha sin completar el arqueo?`
+                        );
+                        
+                        if (!continuar) {
                             // Restaurar la fecha anterior
                             fechaActualInput.value = fechaAnteriorCargada;
+                            
+                            // Mostrar alerta persistente
+                            showAlert('⚠️ Cambio de fecha cancelado. Por favor completa el arqueo de caja.', 'warning');
+                            
                             return;
+                        } else {
+                            // Usuario confirmó el cambio, mostrar advertencia
+                            showAlert('⚠️ RECORDATORIO: Falta arqueo del día ' + fechaFormateada, 'danger');
                         }
                     }
                 }
@@ -1454,13 +1476,36 @@
             await db.from('ventas').delete().eq('fecha', fecha);
             const { error } = await db.from('ventas').insert(ventas);
             
-            if (error) showAlert('❌ Error: ' + error.message, 'danger');
-            else {
+            if (error) {
+                showAlert('❌ Error: ' + error.message, 'danger');
+            } else {
                 showAlert('✅ Ventas guardadas correctamente', 'success');
                 
-                // Limpiar alerta de sobrantes
-                const alertDiv = document.getElementById('alertSobrantes');
-                alertDiv.className = 'hidden';
+                // Verificar si existe arqueo para este día
+                const { data: arqueoExistente } = await db
+                    .from('arqueos')
+                    .select('id')
+                    .eq('fecha', fecha)
+                    .single();
+                
+                if (!arqueoExistente) {
+                    // No hay arqueo, mostrar advertencia persistente
+                    const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
+                    const alertDiv = document.getElementById('alertSobrantes');
+                    alertDiv.className = 'alert alert-warning';
+                    alertDiv.innerHTML = `
+                        ⚠️ <strong>IMPORTANTE:</strong> Guardaste las ventas del ${fechaFormateada} pero aún <strong>NO has guardado el arqueo de caja</strong> de ese día.
+                        <br><br>
+                        Por favor, ve a la pestaña <strong>💰 Arqueo de Caja</strong> para completar el cierre del día.
+                    `;
+                    
+                    // También mostrar alerta flotante
+                    showAlert('⚠️ Recuerda: Falta el arqueo de caja del día ' + fechaFormateada, 'warning');
+                } else {
+                    // Hay arqueo, limpiar alerta
+                    const alertDiv = document.getElementById('alertSobrantes');
+                    alertDiv.className = 'hidden';
+                }
             }
         }
         
@@ -1468,7 +1513,7 @@
             const billetesHtml = BILLETES.map((d, index) => `
                 <div class="denomination-row">
                     <div class="denomination-label">₲ ${d.toLocaleString()}</div>
-                    <input type="number" id="bil_${d}" class="form-input" value="0" onchange="calcularArqueo()" onkeypress="handleEnter(event, 'bil_${d}')">
+                    <input type="number" id="bil_${d}" class="form-input" value="0" onchange="calcularArqueo()" onkeypress="handleEnterArqueo(event, 'bil_${d}')">
                     <div class="denomination-total" id="total_bil_${d}">₲ 0</div>
                 </div>
             `).join('');
@@ -1476,7 +1521,7 @@
             const monedasHtml = MONEDAS.map((d, index) => `
                 <div class="denomination-row">
                     <div class="denomination-label">₲ ${d.toLocaleString()}</div>
-                    <input type="number" id="mon_${d}" class="form-input" value="0" onchange="calcularArqueo()" onkeypress="handleEnter(event, 'mon_${d}')">
+                    <input type="number" id="mon_${d}" class="form-input" value="0" onchange="calcularArqueo()" onkeypress="handleEnterArqueo(event, 'mon_${d}')">
                     <div class="denomination-total" id="total_mon_${d}">₲ 0</div>
                 </div>
             `).join('');
@@ -1485,7 +1530,7 @@
             document.getElementById('monedas').innerHTML = monedasHtml;
         }
         
-        function handleEnter(event, currentId) {
+        function handleEnterArqueo(event, currentId) {
             if (event.key === 'Enter') {
                 event.preventDefault();
                 
