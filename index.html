@@ -1133,27 +1133,187 @@
         async function editarVentas(fecha) {
             const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
             
-            if (!confirm(`¿Deseas editar las ventas del ${fechaFormateada}?\n\nSe cargará esta fecha en la pestaña Carga Diaria para que puedas modificarla.`)) {
+            const accion = confirm(
+                `EDITAR VENTAS DEL ${fechaFormateada}\n\n` +
+                `¿Qué deseas hacer?\n\n` +
+                `• OK = Editar cantidades (modificar datos del mismo día)\n` +
+                `• CANCELAR = Cambiar la fecha de esta venta a otro día`
+            );
+            
+            if (accion) {
+                // Opción 1: Editar en el mismo día
+                // Cambiar a la pestaña de Carga Diaria
+                const tabCarga = document.querySelector('.nav-tab:first-child');
+                tabCarga.click();
+                
+                // Cambiar la fecha
+                const inputFecha = document.getElementById('ventaFecha');
+                inputFecha.value = fecha;
+                inputFecha.setAttribute('data-fecha-cargada', fecha);
+                
+                // Cargar los datos de esa fecha
+                await cargarDatosVenta();
+                
+                // Scroll al inicio
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Mostrar mensaje
+                showAlert(`📝 Editando ventas del ${fechaFormateada}. Modifica los datos y guarda cuando termines.`, 'success');
+            } else {
+                // Opción 2: Cambiar fecha de la venta
+                await cambiarFechaVenta(fecha);
+            }
+        }
+        
+        async function cambiarFechaVenta(fechaOrigen) {
+            const fechaOrigenFormateada = new Date(fechaOrigen + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            // Pedir la nueva fecha
+            const nuevaFecha = prompt(
+                `CAMBIAR FECHA DE VENTA\n\n` +
+                `Ventas del ${fechaOrigenFormateada} se moverán a otra fecha.\n\n` +
+                `Ingresa la nueva fecha (formato: AAAA-MM-DD)\n` +
+                `Ejemplo: 2026-02-13`,
+                fechaOrigen
+            );
+            
+            if (!nuevaFecha) return;
+            
+            // Validar formato de fecha
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(nuevaFecha)) {
+                showAlert('❌ Formato de fecha incorrecto. Usa: AAAA-MM-DD (ejemplo: 2026-02-13)', 'danger');
                 return;
             }
             
-            // Cambiar a la pestaña de Carga Diaria
-            const tabCarga = document.querySelector('.nav-tab:first-child');
-            tabCarga.click();
+            const nuevaFechaFormateada = new Date(nuevaFecha + 'T00:00:00').toLocaleDateString('es-PY');
             
-            // Cambiar la fecha
-            const inputFecha = document.getElementById('ventaFecha');
-            inputFecha.value = fecha;
-            inputFecha.setAttribute('data-fecha-cargada', fecha);
+            // Confirmar el cambio
+            const confirmacion = confirm(
+                `¿Confirmas el cambio?\n\n` +
+                `DESDE: ${fechaOrigenFormateada}\n` +
+                `HACIA: ${nuevaFechaFormateada}\n\n` +
+                `Esto moverá TODAS las ventas de ese día a la nueva fecha.`
+            );
             
-            // Cargar los datos de esa fecha
-            await cargarDatosVenta();
+            if (!confirmacion) return;
             
-            // Scroll al inicio
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            // Mostrar mensaje
-            showAlert(`📝 Editando ventas del ${fechaFormateada}. Modifica los datos y guarda cuando termines.`, 'success');
+            try {
+                // 1. Obtener las ventas de la fecha origen
+                const { data: ventasOrigen, error: errorLectura } = await db
+                    .from('ventas')
+                    .select('*')
+                    .eq('fecha', fechaOrigen);
+                
+                if (errorLectura) throw errorLectura;
+                
+                if (!ventasOrigen || ventasOrigen.length === 0) {
+                    showAlert('❌ No se encontraron ventas en la fecha origen', 'danger');
+                    return;
+                }
+                
+                // 2. Verificar si ya existen ventas en la fecha destino
+                const { data: ventasDestino } = await db
+                    .from('ventas')
+                    .select('id')
+                    .eq('fecha', nuevaFecha);
+                
+                if (ventasDestino && ventasDestino.length > 0) {
+                    const sobrescribir = confirm(
+                        `⚠️ ADVERTENCIA\n\n` +
+                        `Ya existen ventas en la fecha ${nuevaFechaFormateada}.\n\n` +
+                        `Si continúas, se ELIMINARÁN las ventas existentes y se reemplazarán con las del ${fechaOrigenFormateada}.\n\n` +
+                        `¿Deseas continuar?`
+                    );
+                    
+                    if (!sobrescribir) return;
+                    
+                    // Eliminar ventas existentes en destino
+                    await db.from('ventas').delete().eq('fecha', nuevaFecha);
+                }
+                
+                // 3. Crear nuevas ventas con la fecha nueva (sin el id)
+                const ventasNuevas = ventasOrigen.map(v => ({
+                    fecha: nuevaFecha,
+                    producto_id: v.producto_id,
+                    sobrante_anterior: v.sobrante_anterior,
+                    produccion_nueva: v.produccion_nueva,
+                    produccion: v.produccion,
+                    sobrante: v.sobrante,
+                    vendidos: v.vendidos,
+                    precio_venta: v.precio_venta,
+                    costo_unitario: v.costo_unitario,
+                    ingreso: v.ingreso,
+                    ganancia: v.ganancia
+                }));
+                
+                // 4. Insertar en la nueva fecha
+                const { error: errorInsercion } = await db
+                    .from('ventas')
+                    .insert(ventasNuevas);
+                
+                if (errorInsercion) throw errorInsercion;
+                
+                // 5. Eliminar de la fecha origen
+                await db.from('ventas').delete().eq('fecha', fechaOrigen);
+                
+                showAlert(
+                    `✅ Ventas movidas exitosamente\n` +
+                    `De: ${fechaOrigenFormateada} → A: ${nuevaFechaFormateada}`,
+                    'success'
+                );
+                
+                // 6. Recargar historial
+                await cargarHistorial();
+                
+                // 7. Preguntar si quiere mover el arqueo también
+                const { data: arqueoOrigen } = await db
+                    .from('arqueos')
+                    .select('id')
+                    .eq('fecha', fechaOrigen)
+                    .single();
+                
+                if (arqueoOrigen) {
+                    const moverArqueo = confirm(
+                        `También existe un ARQUEO DE CAJA para el ${fechaOrigenFormateada}.\n\n` +
+                        `¿Deseas mover el arqueo a la nueva fecha también?`
+                    );
+                    
+                    if (moverArqueo) {
+                        await cambiarFechaArqueo(fechaOrigen, nuevaFecha);
+                    }
+                }
+                
+            } catch (error) {
+                showAlert('❌ Error al cambiar fecha: ' + error.message, 'danger');
+                console.error('Error cambiando fecha:', error);
+            }
+        }
+        
+        async function cambiarFechaArqueo(fechaOrigen, fechaDestino) {
+            try {
+                // Obtener arqueo origen
+                const { data: arqueo } = await db
+                    .from('arqueos')
+                    .select('*')
+                    .eq('fecha', fechaOrigen)
+                    .single();
+                
+                if (!arqueo) return;
+                
+                // Eliminar arqueo en destino si existe
+                await db.from('arqueos').delete().eq('fecha', fechaDestino);
+                
+                // Actualizar la fecha del arqueo
+                await db
+                    .from('arqueos')
+                    .update({ fecha: fechaDestino })
+                    .eq('fecha', fechaOrigen);
+                
+                showAlert('✅ Arqueo también movido a la nueva fecha', 'success');
+                
+            } catch (error) {
+                showAlert('⚠️ No se pudo mover el arqueo: ' + error.message, 'warning');
+            }
         }
         
         async function cargarProductos() {
