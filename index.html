@@ -270,7 +270,7 @@
         
         .product-row {
             display: grid;
-            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
             gap: 0.75rem;
             padding: 1rem;
             background: var(--bg-main);
@@ -349,6 +349,7 @@
     <div class="nav-tabs">
         <button class="nav-tab active" onclick="showTab('carga')">📝 Carga Diaria</button>
         <button class="nav-tab" onclick="showTab('arqueo')">💰 Arqueo de Caja</button>
+        <button class="nav-tab" onclick="showTab('inventario')">📦 Inventario</button>
         <button class="nav-tab" onclick="showTab('catalogo')">📦 Catálogo</button>
         <button class="nav-tab" onclick="showTab('dashboard')">📊 Dashboard</button>
         <button class="nav-tab" onclick="showTab('historial')">📋 Historial</button>
@@ -472,6 +473,27 @@
                 </div>
                 
                 <button onclick="guardarArqueo()" class="btn btn-success" style="margin-top: 1.5rem;">💾 Guardar Arqueo</button>
+            </div>
+        </div>
+        
+        <div id="tab-inventario" class="tab-content">
+            <div class="card">
+                <div class="card-header">📦 Inventario Actual (Stock Disponible)</div>
+                
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                    <button onclick="filtrarInventario('todos')" class="btn btn-secondary" id="btnTodos">📦 Todos</button>
+                    <button onclick="filtrarInventario('conStock')" class="btn btn-success" id="btnConStock">🟢 Con Stock</button>
+                    <button onclick="filtrarInventario('sinStock')" class="btn btn-danger" id="btnSinStock">🔴 Sin Stock</button>
+                </div>
+                
+                <div id="listaInventario"></div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 700; font-size: 1.1rem;">Valor Total del Inventario:</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.5rem; color: var(--primary);" id="valorTotalInventario">₲ 0</span>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -790,6 +812,7 @@
             else if (tabName === 'catalogo') cargarListaProductos();
             else if (tabName === 'arqueo') cargarVentaDelDia();
             else if (tabName === 'historial') cargarHistorial();
+            else if (tabName === 'inventario') cargarInventario();
         }
         
         async function cargarHistorial() {
@@ -1289,6 +1312,108 @@
             }
         }
         
+        let filtroInventario = 'todos';
+        
+        async function cargarInventario() {
+            await cargarProductos();
+            
+            // Obtener la última fecha con datos
+            const { data: ultimaVenta } = await db
+                .from('ventas')
+                .select('fecha, producto_id, sobrante')
+                .order('fecha', { ascending: false })
+                .limit(100);
+            
+            if (!ultimaVenta || ultimaVenta.length === 0) {
+                document.getElementById('listaInventario').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos de inventario. Carga ventas primero.</p>';
+                document.getElementById('valorTotalInventario').textContent = '₲ 0';
+                return;
+            }
+            
+            // Obtener la fecha más reciente
+            const fechaUltima = ultimaVenta[0].fecha;
+            const ventasUltimaFecha = ultimaVenta.filter(v => v.fecha === fechaUltima);
+            
+            // Crear mapa de inventario
+            const inventario = {};
+            ventasUltimaFecha.forEach(v => {
+                inventario[v.producto_id] = v.sobrante;
+            });
+            
+            // Crear array con productos y su stock
+            const productosConStock = productos.map(p => ({
+                ...p,
+                stock: inventario[p.id] || 0,
+                valor: (inventario[p.id] || 0) * p.costo_unitario
+            })).sort((a, b) => b.stock - a.stock);
+            
+            // Filtrar según selección
+            let productosFiltrados = productosConStock;
+            if (filtroInventario === 'conStock') {
+                productosFiltrados = productosConStock.filter(p => p.stock > 0);
+            } else if (filtroInventario === 'sinStock') {
+                productosFiltrados = productosConStock.filter(p => p.stock === 0);
+            }
+            
+            // Calcular valor total
+            const valorTotal = productosConStock.reduce((sum, p) => sum + p.valor, 0);
+            
+            // Renderizar
+            const fechaFormateada = new Date(fechaUltima + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            if (productosFiltrados.length === 0) {
+                document.getElementById('listaInventario').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay productos en esta categoría</p>';
+            } else {
+                document.getElementById('listaInventario').innerHTML = `
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <strong>Última actualización:</strong> ${fechaFormateada}
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>Stock</th>
+                                <th>Costo Unitario</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productosFiltrados.map(p => `
+                                <tr style="background: ${p.stock === 0 ? '#ffebee' : 'white'};">
+                                    <td style="font-weight: 600;">
+                                        ${p.stock === 0 ? '🔴 ' : p.stock > 10 ? '🟢 ' : '🟡 '}
+                                        ${p.nombre}
+                                    </td>
+                                    <td><span style="background: var(--bg-main); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">${p.categoria}</span></td>
+                                    <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.1rem;">
+                                        ${p.stock}
+                                    </td>
+                                    <td>₲ ${p.costo_unitario.toLocaleString()}</td>
+                                    <td style="font-weight: 600; color: ${p.valor > 0 ? 'var(--success)' : 'var(--text-light)'};">
+                                        ₲ ${p.valor.toLocaleString()}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            document.getElementById('valorTotalInventario').textContent = `₲ ${valorTotal.toLocaleString()}`;
+        }
+        
+        function filtrarInventario(filtro) {
+            filtroInventario = filtro;
+            
+            // Actualizar botones
+            document.getElementById('btnTodos').className = filtro === 'todos' ? 'btn btn-primary' : 'btn btn-secondary';
+            document.getElementById('btnConStock').className = filtro === 'conStock' ? 'btn btn-success' : 'btn btn-secondary';
+            document.getElementById('btnSinStock').className = filtro === 'sinStock' ? 'btn btn-danger' : 'btn btn-secondary';
+            
+            cargarInventario();
+        }
+        
         async function cambiarFechaArqueo(fechaOrigen, fechaDestino) {
             try {
                 // Obtener arqueo origen
@@ -1421,6 +1546,7 @@
                 document.getElementById(`sobrant_ant_${p.id}`).value = 0;
                 document.getElementById(`prod_hoy_${p.id}`).value = 0;
                 document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = 0;
                 document.getElementById(`sobr_${p.id}`).value = 0;
             });
             calcularResumen();
@@ -1435,6 +1561,7 @@
                 document.getElementById(`sobrant_ant_${p.id}`).value = 0;
                 document.getElementById(`prod_hoy_${p.id}`).value = 0;
                 document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = 0;
                 document.getElementById(`sobr_${p.id}`).value = 0;
             });
             
@@ -1443,9 +1570,11 @@
                 const sobrantAntInput = document.getElementById(`sobrant_ant_${v.producto_id}`);
                 const prodHoyInput = document.getElementById(`prod_hoy_${v.producto_id}`);
                 const prodInput = document.getElementById(`prod_${v.producto_id}`);
+                const averInput = document.getElementById(`aver_${v.producto_id}`);
                 const sobrInput = document.getElementById(`sobr_${v.producto_id}`);
                 
                 if (prodInput) prodInput.value = v.produccion;
+                if (averInput) averInput.value = v.averiados || 0;
                 if (sobrInput) sobrInput.value = v.sobrante;
                 
                 // Calcular cuánto fue sobrante anterior vs producido hoy
@@ -1555,6 +1684,10 @@
                         <input type="number" id="prod_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;">
                     </div>
                     <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Averiados</label>
+                        <input type="number" id="aver_${p.id}" class="form-input" value="0" onchange="calcularResumen()" onkeydown="handleEnterVentas(event, 'aver_${p.id}')" style="background: #fff3cd;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Sobrante Hoy</label>
                         <input type="number" id="sobr_${p.id}" class="form-input" value="0" onchange="calcularResumen()" onkeydown="handleEnterVentas(event, 'sobr_${p.id}')">
                     </div>
@@ -1589,8 +1722,10 @@
                 
                 productRows.forEach(row => {
                     const prodHoyInput = row.querySelector('[id^="prod_hoy_"]');
+                    const averInput = row.querySelector('[id^="aver_"]');
                     const sobrInput = row.querySelector('[id^="sobr_"]:not([id*="_ant_"])');
                     if (prodHoyInput) orden.push(prodHoyInput.id);
+                    if (averInput) orden.push(averInput.id);
                     if (sobrInput) orden.push(sobrInput.id);
                 });
                 
@@ -1611,8 +1746,9 @@
             
             productos.forEach(p => {
                 const produccion = parseInt(document.getElementById(`prod_${p.id}`).value) || 0;
+                const averiados = parseInt(document.getElementById(`aver_${p.id}`).value) || 0;
                 const sobrante = parseInt(document.getElementById(`sobr_${p.id}`).value) || 0;
-                const vendidos = produccion - sobrante;
+                const vendidos = produccion - averiados - sobrante;
                 const ingreso = vendidos * p.precio_venta;
                 const ganancia = vendidos * (p.precio_venta - p.costo_unitario);
                 
@@ -1639,8 +1775,9 @@
                 const sobranteAnterior = parseInt(document.getElementById(`sobrant_ant_${p.id}`).value) || 0;
                 const producidoHoy = parseInt(document.getElementById(`prod_hoy_${p.id}`).value) || 0;
                 const produccion = parseInt(document.getElementById(`prod_${p.id}`).value) || 0;
+                const averiados = parseInt(document.getElementById(`aver_${p.id}`).value) || 0;
                 const sobrante = parseInt(document.getElementById(`sobr_${p.id}`).value) || 0;
-                const vendidos = produccion - sobrante;
+                const vendidos = produccion - averiados - sobrante;
                 
                 if (produccion > 0) {
                     ventas.push({
@@ -1648,6 +1785,7 @@
                         sobrante_anterior: sobranteAnterior,
                         produccion_nueva: producidoHoy,
                         produccion, 
+                        averiados,
                         sobrante, 
                         vendidos,
                         precio_venta: p.precio_venta, 
