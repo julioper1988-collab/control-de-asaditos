@@ -431,6 +431,11 @@
                     </div>
                     
                     <div class="form-group">
+                        <label class="form-label">Transferencias</label>
+                        <input type="number" id="transferencias" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'transferencias')">
+                    </div>
+                    
+                    <div class="form-group">
                         <label class="form-label">Pedidos Ya</label>
                         <input type="number" id="pedidosYa" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pedidosYa')">
                     </div>
@@ -585,11 +590,16 @@
             <!-- Métodos de Pago -->
             <div class="card">
                 <div class="card-header">💳 Análisis por Método de Pago</div>
-                <div class="grid grid-3" style="margin-top: 1rem;">
+                <div class="grid grid-4" style="margin-top: 1rem;">
                     <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
                         <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">💵 Efectivo</div>
                         <div style="font-size: 1.75rem; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace;" id="totalEfectivoPagos">₲ 0</div>
                         <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajeEfectivo">0%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🔄 Transferencias</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: #17a2b8; font-family: 'JetBrains Mono', monospace;" id="totalTransferenciasPagos">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajeTransferencias">0%</div>
                     </div>
                     <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
                         <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">💳 POS/Tarjeta</div>
@@ -1864,6 +1874,7 @@
                     ...BILLETES.map(d => `bil_${d}`),
                     ...MONEDAS.map(d => `mon_${d}`),
                     'sencilloInicio',
+                    'transferencias',
                     'pedidosYa',
                     'pos'
                 ];
@@ -1929,12 +1940,13 @@
         function calcularRendicion() {
             const efectivo = calcularTotalEfectivo();
             const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
+            const transferencias = parseInt(document.getElementById('transferencias').value) || 0;
             const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
             const pos = parseInt(document.getElementById('pos').value) || 0;
             const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
             
             // Los gastos se SUMAN porque salieron de la caja que ya contamos
-            const totalTiene = efectivo + pedidosYa + pos + totalGastos;
+            const totalTiene = efectivo + transferencias + pedidosYa + pos + totalGastos;
             const debeTener = ventaDelDiaActual + sencillo;
             const diferencia = totalTiene - debeTener;
             
@@ -2005,16 +2017,18 @@
             const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
             const efectivo = calcularTotalEfectivo();
             const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
+            const transferencias = parseInt(document.getElementById('transferencias').value) || 0;
             const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
             const pos = parseInt(document.getElementById('pos').value) || 0;
             
             const arqueo = {
                 fecha, responsable, efectivo,
                 sencillo_inicio: sencillo,
+                transferencias: transferencias,
                 pedidos_ya: pedidosYa,
                 pos: pos,
                 gastos: totalGastos,
-                diferencia: (efectivo + pedidosYa + pos + totalGastos) - (ventaDelDiaActual + sencillo)
+                diferencia: (efectivo + transferencias + pedidosYa + pos + totalGastos) - (ventaDelDiaActual + sencillo)
             };
             
             // Guardar arqueo
@@ -2059,6 +2073,7 @@
             
             // Limpiar campos de rendición
             document.getElementById('sencilloInicio').value = 0;
+            document.getElementById('transferencias').value = 0;
             document.getElementById('pedidosYa').value = 0;
             document.getElementById('pos').value = 0;
             
@@ -2238,20 +2253,22 @@
             const totalSobrantes = ventasPeriodo.reduce((sum, v) => sum + v.sobrante, 0);
             const totalCostos = totalPeriodo - gananciaPeriodo;
             
-            // Cálculos de arqueos (POS, Pedidos Ya, Gastos, Efectivo)
+            // Cálculos de arqueos (POS, Pedidos Ya, Gastos, Efectivo, Transferencias)
             let totalPOS = 0;
             let totalPedidosYa = 0;
             let totalGastos = 0;
             let totalEfectivo = 0;
+            let totalTransferencias = 0;
             
             if (arqueosPeriodo) {
                 totalPOS = arqueosPeriodo.reduce((sum, a) => sum + (a.pos || 0), 0);
                 totalPedidosYa = arqueosPeriodo.reduce((sum, a) => sum + (a.pedidos_ya || 0), 0);
                 totalGastos = arqueosPeriodo.reduce((sum, a) => sum + (a.gastos || 0), 0);
                 totalEfectivo = arqueosPeriodo.reduce((sum, a) => sum + (a.efectivo || 0), 0);
+                totalTransferencias = arqueosPeriodo.reduce((sum, a) => sum + (a.transferencias || 0), 0);
             }
             
-            const totalPagos = totalEfectivo + totalPOS + totalPedidosYa;
+            const totalPagos = totalEfectivo + totalPOS + totalPedidosYa + totalTransferencias;
             
             // Días trabajados
             const fechasUnicas = [...new Set(ventasPeriodo.map(v => v.fecha))];
@@ -2281,6 +2298,7 @@
             
             // Porcentajes de métodos de pago
             const porcentajeEfectivo = totalPagos > 0 ? ((totalEfectivo / totalPagos) * 100).toFixed(1) : 0;
+            const porcentajeTransferencias = totalPagos > 0 ? ((totalTransferencias / totalPagos) * 100).toFixed(1) : 0;
             const porcentajePOS = totalPagos > 0 ? ((totalPOS / totalPagos) * 100).toFixed(1) : 0;
             const porcentajePedidosYa = totalPagos > 0 ? ((totalPedidosYa / totalPagos) * 100).toFixed(1) : 0;
             
@@ -2300,6 +2318,9 @@
             // Métodos de pago
             document.getElementById('totalEfectivoPagos').textContent = `₲ ${totalEfectivo.toLocaleString()}`;
             document.getElementById('porcentajeEfectivo').textContent = `${porcentajeEfectivo}% del total`;
+            
+            document.getElementById('totalTransferenciasPagos').textContent = `₲ ${totalTransferencias.toLocaleString()}`;
+            document.getElementById('porcentajeTransferencias').textContent = `${porcentajeTransferencias}% del total`;
             
             document.getElementById('totalPOS').textContent = `₲ ${totalPOS.toLocaleString()}`;
             document.getElementById('porcentajePOS').textContent = `${porcentajePOS}% del total`;
