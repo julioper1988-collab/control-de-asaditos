@@ -376,7 +376,7 @@
             
             <div class="card">
                 <div class="card-header">📋 Resumen del Día</div>
-                <div class="grid grid-3">
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
                     <div class="stat-card">
                         <div class="stat-label">Total Vendido</div>
                         <div class="stat-value" id="totalVendidoDia">0</div>
@@ -388,6 +388,10 @@
                     <div class="stat-card" style="background: linear-gradient(135deg, var(--accent) 0%, #e09e1c 100%);">
                         <div class="stat-label">Ingreso Total</div>
                         <div class="stat-value" id="ingresoTotalDia">₲ 0</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--danger) 0%, #a71d2a 100%);">
+                        <div class="stat-label">🔧 Averiados del Día</div>
+                        <div class="stat-value" id="averiadosTotalDia">0</div>
                     </div>
                 </div>
             </div>
@@ -405,7 +409,12 @@
                     
                     <div class="form-group">
                         <label class="form-label">Responsable</label>
-                        <input type="text" id="arqueoResponsable" class="form-input" value="Julio">
+                        <input type="text" id="arqueoResponsable" class="form-input" value="Julio" list="listaResponsables" autocomplete="off">
+                        <datalist id="listaResponsables">
+                            <option value="Julio">
+                            <option value="Empleado 1">
+                            <option value="Empleado 2">
+                        </datalist>
                     </div>
                 </div>
                 
@@ -441,6 +450,11 @@
                     </div>
                     
                     <div class="form-group">
+                        <label class="form-label">Monchis</label>
+                        <input type="number" id="monchis" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'monchis')">
+                    </div>
+                    
+                    <div class="form-group">
                         <label class="form-label">POS / Tarjeta</label>
                         <input type="number" id="pos" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pos')">
                     </div>
@@ -448,7 +462,31 @@
                 
                 <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">📝 Detalle de Gastos</h3>
                 <div id="listaGastos"></div>
-                <button onclick="agregarGasto()" class="btn btn-primary" style="margin-bottom: 1rem;">➕ Agregar Gasto</button>
+                
+                <!-- Formulario inline de gastos -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 0.75rem; align-items: end; background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem;">Concepto</label>
+                        <input type="text" id="gastoConcepto" class="form-input" placeholder="Ej: Gas, Bolsas..." onkeypress="if(event.key==='Enter') agregarGasto()">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem;">Categoría</label>
+                        <select id="gastoCategoria" class="form-select">
+                            <option value="Insumos">Insumos</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="Gas/Combustible">Gas/Combustible</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Limpieza">Limpieza</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem;">Monto (₲)</label>
+                        <input type="number" id="gastoMonto" class="form-input" placeholder="0" onkeypress="if(event.key==='Enter') agregarGasto()">
+                    </div>
+                    <button onclick="agregarGasto()" class="btn btn-primary" style="height: 44px;">➕ Agregar</button>
+                </div>
                 
                 <div style="background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -568,6 +606,9 @@
                 </div>
             </div>
             
+            <!-- Alertas de control -->
+            <div id="alertasDashboard"></div>
+            
             <!-- Estadísticas Principales -->
             <div class="grid grid-3">
                 <div class="stat-card">
@@ -590,7 +631,7 @@
             <!-- Métodos de Pago -->
             <div class="card">
                 <div class="card-header">💳 Análisis por Método de Pago</div>
-                <div class="grid grid-4" style="margin-top: 1rem;">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1rem;">
                     <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
                         <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">💵 Efectivo</div>
                         <div style="font-size: 1.75rem; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace;" id="totalEfectivoPagos">₲ 0</div>
@@ -610,6 +651,11 @@
                         <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🛵 Pedidos Ya</div>
                         <div style="font-size: 1.75rem; font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', monospace;" id="totalPedidosYa">₲ 0</div>
                         <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajePedidosYa">0%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🍔 Monchis</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: #e67e22; font-family: 'JetBrains Mono', monospace;" id="totalMonchis">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajeMonchis">0%</div>
                     </div>
                 </div>
                 <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
@@ -649,7 +695,7 @@
             <div class="grid grid-2">
                 <div class="card">
                     <div class="card-header">📈 Eficiencia de Producción</div>
-                    <div style="display: flex; justify-content: space-around; margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-around; margin-top: 1rem; flex-wrap: wrap; gap: 1rem;">
                         <div style="text-align: center;">
                             <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Producción Total</div>
                             <div style="font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;" id="totalProduccion">0</div>
@@ -660,12 +706,20 @@
                         </div>
                         <div style="text-align: center;">
                             <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Sobrantes</div>
-                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger); font-family: 'JetBrains Mono', monospace;" id="totalSobrantes">0</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace;" id="totalSobrantes">0</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🔧 Averiados</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger); font-family: 'JetBrains Mono', monospace;" id="totalAveriadosDash">0</div>
                         </div>
                     </div>
                     <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px; text-align: center;">
-                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Eficiencia</div>
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Eficiencia (vendidos/producción)</div>
                         <div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="eficiencia">0%</div>
+                    </div>
+                    <div style="margin-top: 0.75rem; padding: 1rem; background: #fff3cd; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem; color: #856404; margin-bottom: 0.5rem;">Pérdida por Averiados</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--danger); font-family: 'JetBrains Mono', monospace;" id="perdidaAveriados">₲ 0</div>
                     </div>
                 </div>
                 
@@ -800,9 +854,55 @@
             // Cargar datos de venta (sobrantes del día anterior si aplica)
             await cargarDatosVenta();
             
+            // Verificar si hay días recientes sin datos
+            await verificarUltimoDiaRegistrado();
+            
             showAlert('✅ Sistema conectado correctamente', 'success');
         };
         
+        async function verificarUltimoDiaRegistrado() {
+            const { data } = await db.from('ventas').select('fecha').order('fecha', { ascending: false }).limit(1);
+            if (!data || data.length === 0) return;
+            
+            const ultimaFecha = data[0].fecha;
+            const hoy = new Date().toISOString().split('T')[0];
+            const ayer = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            
+            if (ultimaFecha < ayer && ultimaFecha !== hoy) {
+                const diasSinDatos = Math.floor((new Date(hoy) - new Date(ultimaFecha)) / 86400000);
+                const fechaFmt = new Date(ultimaFecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'long', day: '2-digit', month: 'long' });
+                if (diasSinDatos >= 1) {
+                    setTimeout(() => showAlert(`⚠️ Último registro: ${fechaFmt} (hace ${diasSinDatos} día${diasSinDatos > 1 ? 's' : ''}). ¿Falta cargar ventas?`, 'warning'), 1500);
+                }
+            }
+        }
+
+        // ===== MODAL DE CONFIRMACIÓN REUTILIZABLE =====
+        function mostrarModalConfirmacion(htmlContenido) {
+            return new Promise((resolve) => {
+                // Crear overlay
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+                
+                const modal = document.createElement('div');
+                modal.style.cssText = 'background:white;border-radius:14px;max-width:520px;width:100%;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.25);';
+                modal.innerHTML = `
+                    ${htmlContenido}
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button id="modalConfirmar" class="btn btn-success" style="flex:1;font-size:1rem;">✅ Confirmar y Guardar</button>
+                        <button id="modalCancelar" class="btn btn-secondary" style="flex:1;font-size:1rem;">❌ Cancelar</button>
+                    </div>
+                `;
+                
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+                
+                modal.querySelector('#modalConfirmar').onclick = () => { document.body.removeChild(overlay); resolve(true); };
+                modal.querySelector('#modalCancelar').onclick = () => { document.body.removeChild(overlay); resolve(false); };
+                overlay.onclick = (e) => { if (e.target === overlay) { document.body.removeChild(overlay); resolve(false); } };
+            });
+        }
+
         function showAlert(message, type = 'success') {
             const alert = document.createElement('div');
             alert.className = `alert alert-${type}`;
@@ -953,7 +1053,7 @@
                 .from('arqueos')
                 .select('*')
                 .eq('fecha', fecha)
-                .single();
+                .maybeSingle();
             
             // Obtener gastos si hay arqueo
             let gastos = [];
@@ -1015,7 +1115,7 @@
             
             // Sección de Arqueo
             if (arqueo) {
-                const totalTiene = arqueo.efectivo + arqueo.pedidos_ya + arqueo.pos + arqueo.gastos;
+                const totalTiene = arqueo.efectivo + arqueo.pedidos_ya + (arqueo.monchis || 0) + arqueo.pos + arqueo.gastos;
                 const debeTener = ventas ? ventas.reduce((sum, v) => sum + v.ingreso, 0) + arqueo.sencillo_inicio : arqueo.sencillo_inicio;
                 
                 html += `
@@ -1035,6 +1135,10 @@
                                     <div style="margin-bottom: 1rem;">
                                         <span style="font-weight: 600;">Pedidos Ya:</span>
                                         <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.pedidos_ya.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">🍔 Monchis:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${(arqueo.monchis || 0).toLocaleString()}</span>
                                     </div>
                                     <div style="margin-bottom: 1rem;">
                                         <span style="font-weight: 600;">POS:</span>
@@ -1139,7 +1243,7 @@
                     .from('arqueos')
                     .select('id')
                     .eq('fecha', fecha)
-                    .single();
+                    .maybeSingle();
                 
                 // 2. Eliminar gastos si hay arqueo
                 if (arqueo) {
@@ -1303,7 +1407,7 @@
                     .from('arqueos')
                     .select('id')
                     .eq('fecha', fechaOrigen)
-                    .single();
+                    .maybeSingle();
                 
                 if (arqueoOrigen) {
                     const moverArqueo = confirm(
@@ -1431,7 +1535,7 @@
                     .from('arqueos')
                     .select('*')
                     .eq('fecha', fechaOrigen)
-                    .single();
+                    .maybeSingle();
                 
                 if (!arqueo) return;
                 
@@ -1479,7 +1583,7 @@
                         .from('arqueos')
                         .select('id')
                         .eq('fecha', fechaAnteriorCargada)
-                        .single();
+                        .maybeSingle();
                     
                     if (!arqueoAnterior) {
                         // No hay arqueo para el día con ventas
@@ -1610,6 +1714,7 @@
                 document.getElementById(`sobrant_ant_${p.id}`).value = 0;
                 document.getElementById(`prod_hoy_${p.id}`).value = 0;
                 document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = 0;
                 document.getElementById(`sobr_${p.id}`).value = 0;
             });
             
@@ -1648,15 +1753,17 @@
                 return;
             }
             
-            // Obtener ventas del mes para ordenar productos
+            // Obtener ventas de los últimos 30 días para ordenar productos (garantiza ranking siempre activo)
             const hoy = new Date();
-            const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1).toISOString().split('T')[0];
+            const hace30dias = new Date();
+            hace30dias.setDate(hace30dias.getDate() - 30);
+            const desde30dias = hace30dias.toISOString().split('T')[0];
             const { data: ventasMes } = await db
                 .from('ventas')
                 .select('producto_id, vendidos')
-                .gte('fecha', primerDiaMes);
+                .gte('fecha', desde30dias);
             
-            // Calcular total vendido por producto este mes
+            // Calcular total vendido por producto en los últimos 30 días
             const ventasPorProducto = {};
             if (ventasMes) {
                 ventasMes.forEach(v => {
@@ -1667,19 +1774,19 @@
                 });
             }
             
-            // Ordenar productos por ventas del mes (mayor a menor)
+            // Ordenar productos por ventas de los últimos 30 días (mayor a menor)
             const productosOrdenados = [...productos].sort((a, b) => {
                 const ventasA = ventasPorProducto[a.id] || 0;
                 const ventasB = ventasPorProducto[b.id] || 0;
-                return ventasB - ventasA; // Mayor a menor
+                return ventasB - ventasA;
             });
             
             container.innerHTML = productosOrdenados.map((p, index) => `
                 <div class="product-row">
                     <div class="product-name">
-                        ${ventasPorProducto[p.id] ? '<span style="color: var(--primary); font-weight: 800; margin-right: 0.5rem;">★</span>' : ''}
+                        ${ventasPorProducto[p.id] ? `<span style="color: var(--primary); font-weight: 800; margin-right: 0.25rem;">★</span><span style="font-size: 0.7rem; background: var(--primary); color: white; border-radius: 10px; padding: 0.1rem 0.4rem; margin-right: 0.4rem; font-weight: 700;">#${productosOrdenados.indexOf(p) + 1}</span>` : ''}
                         ${p.nombre}
-                        ${ventasPorProducto[p.id] ? `<span style="font-size: 0.75rem; color: var(--text-light); margin-left: 0.5rem;">(${ventasPorProducto[p.id]} vendidos)</span>` : ''}
+                        ${ventasPorProducto[p.id] ? `<span style="font-size: 0.75rem; color: var(--text-light); margin-left: 0.5rem;">(${ventasPorProducto[p.id]} últ. 30d)</span>` : ''}
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Sobrante Ayer</label>
@@ -1752,28 +1859,49 @@
         }
         
         function calcularResumen() {
-            let totalVendidos = 0, totalIngreso = 0, totalGanancia = 0;
+            let totalVendidos = 0, totalIngreso = 0, totalGanancia = 0, totalAveriados = 0;
+            let hayError = false;
             
             productos.forEach(p => {
                 const produccion = parseInt(document.getElementById(`prod_${p.id}`).value) || 0;
                 const averiados = parseInt(document.getElementById(`aver_${p.id}`).value) || 0;
                 const sobrante = parseInt(document.getElementById(`sobr_${p.id}`).value) || 0;
                 const vendidos = produccion - averiados - sobrante;
-                const ingreso = vendidos * p.precio_venta;
-                const ganancia = vendidos * (p.precio_venta - p.costo_unitario);
+                const ingreso = Math.max(0, vendidos) * p.precio_venta;
+                const ganancia = Math.max(0, vendidos) * (p.precio_venta - p.costo_unitario);
                 
-                document.getElementById(`vend_${p.id}`).value = vendidos;
-                document.getElementById(`ingr_${p.id}`).textContent = `₲ ${ingreso.toLocaleString()}`;
+                // Marcar fila en rojo si hay datos inválidos
+                const row = document.getElementById(`vend_${p.id}`)?.closest('.product-row');
+                if (produccion > 0 && vendidos < 0) {
+                    hayError = true;
+                    document.getElementById(`vend_${p.id}`).value = '⚠️ ERROR';
+                    document.getElementById(`vend_${p.id}`).style.color = 'var(--danger)';
+                    document.getElementById(`ingr_${p.id}`).textContent = '⚠️';
+                    if (row) row.style.outline = '2px solid var(--danger)';
+                } else {
+                    document.getElementById(`vend_${p.id}`).value = vendidos;
+                    document.getElementById(`vend_${p.id}`).style.color = 'var(--primary)';
+                    document.getElementById(`ingr_${p.id}`).textContent = `₲ ${ingreso.toLocaleString()}`;
+                    if (row) row.style.outline = '';
+                    totalVendidos += vendidos;
+                    totalIngreso += ingreso;
+                    totalGanancia += ganancia;
+                }
                 
-                totalVendidos += vendidos;
-                totalIngreso += ingreso;
-                totalGanancia += ganancia;
+                if (produccion > 0) totalAveriados += averiados;
             });
             
             ventaDelDiaActual = totalIngreso;
-            document.getElementById('totalVendidoDia').textContent = totalVendidos;
+            document.getElementById('totalVendidoDia').textContent = hayError ? '⚠️ Revisá los datos' : totalVendidos;
             document.getElementById('ingresoTotalDia').textContent = `₲ ${totalIngreso.toLocaleString()}`;
             document.getElementById('gananciaEstimadaDia').textContent = `₲ ${totalGanancia.toLocaleString()}`;
+            
+            // Averiados en resumen
+            const averCard = document.getElementById('averiadosTotalDia');
+            if (averCard) {
+                averCard.textContent = totalAveriados;
+                averCard.closest('.stat-card').style.opacity = totalAveriados > 0 ? '1' : '0.5';
+            }
         }
         
         async function guardarVentas() {
@@ -1781,6 +1909,8 @@
             if (!fecha) { showAlert('⚠️ Selecciona una fecha', 'warning'); return; }
             
             const ventas = [];
+            let errores = [];
+            
             for (const p of productos) {
                 const sobranteAnterior = parseInt(document.getElementById(`sobrant_ant_${p.id}`).value) || 0;
                 const producidoHoy = parseInt(document.getElementById(`prod_hoy_${p.id}`).value) || 0;
@@ -1790,14 +1920,16 @@
                 const vendidos = produccion - averiados - sobrante;
                 
                 if (produccion > 0) {
+                    // Validación: vendidos no puede ser negativo
+                    if (vendidos < 0) {
+                        errores.push(`• ${p.nombre}: Sobrante (${sobrante}) + Averiados (${averiados}) > Producción (${produccion})`);
+                        continue;
+                    }
                     ventas.push({
                         fecha, producto_id: p.id, 
                         sobrante_anterior: sobranteAnterior,
                         produccion_nueva: producidoHoy,
-                        produccion, 
-                        averiados,
-                        sobrante, 
-                        vendidos,
+                        produccion, averiados, sobrante, vendidos,
                         precio_venta: p.precio_venta, 
                         costo_unitario: p.costo_unitario,
                         ingreso: vendidos * p.precio_venta,
@@ -1806,7 +1938,55 @@
                 }
             }
             
-            if (ventas.length === 0) { showAlert('⚠️ No hay datos', 'warning'); return; }
+            // Bloquear guardado si hay errores
+            if (errores.length > 0) {
+                showAlert(`❌ Corregí estos errores antes de guardar:\n${errores.join('\n')}`, 'danger');
+                return;
+            }
+            
+            if (ventas.length === 0) { showAlert('⚠️ No hay datos para guardar', 'warning'); return; }
+            
+            // Modal de confirmación con resumen
+            const totalVend = ventas.reduce((s, v) => s + v.vendidos, 0);
+            const totalProd = ventas.reduce((s, v) => s + v.produccion, 0);
+            const totalSobr = ventas.reduce((s, v) => s + v.sobrante, 0);
+            const totalAver = ventas.reduce((s, v) => s + v.averiados, 0);
+            const totalIngr = ventas.reduce((s, v) => s + v.ingreso, 0);
+            const totalGan  = ventas.reduce((s, v) => s + v.ganancia, 0);
+            const fechaFmt  = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'long', day: '2-digit', month: 'long' });
+            
+            const confirmado = await mostrarModalConfirmacion(`
+                <h3 style="color:var(--secondary);margin-bottom:1.25rem;">📋 Confirmar guardado — ${fechaFmt}</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem;">
+                    <div style="background:var(--bg-main);padding:1rem;border-radius:8px;text-align:center;">
+                        <div style="font-size:0.85rem;color:var(--text-light);">Producción total</div>
+                        <div style="font-size:1.5rem;font-weight:800;">${totalProd}</div>
+                    </div>
+                    <div style="background:var(--bg-main);padding:1rem;border-radius:8px;text-align:center;">
+                        <div style="font-size:0.85rem;color:var(--text-light);">Vendidos</div>
+                        <div style="font-size:1.5rem;font-weight:800;color:var(--success);">${totalVend}</div>
+                    </div>
+                    <div style="background:var(--bg-main);padding:1rem;border-radius:8px;text-align:center;">
+                        <div style="font-size:0.85rem;color:var(--text-light);">Sobrantes</div>
+                        <div style="font-size:1.5rem;font-weight:800;color:var(--accent);">${totalSobr}</div>
+                    </div>
+                    <div style="background:${totalAver > 0 ? '#ffe0e0' : 'var(--bg-main)'};padding:1rem;border-radius:8px;text-align:center;">
+                        <div style="font-size:0.85rem;color:var(--text-light);">🔧 Averiados</div>
+                        <div style="font-size:1.5rem;font-weight:800;color:var(--danger);">${totalAver}</div>
+                    </div>
+                </div>
+                <div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:1rem;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-weight:700;">Ingreso Total</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:800;">₲ ${totalIngr.toLocaleString()}</span>
+                </div>
+                <div style="background:linear-gradient(135deg,var(--success),#1e7e34);color:white;padding:0.75rem 1rem;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;">
+                    <span style="font-weight:700;">Ganancia Estimada</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-weight:800;">₲ ${totalGan.toLocaleString()}</span>
+                </div>
+                <p style="margin-top:1.25rem;color:var(--text-light);font-size:0.9rem;text-align:center;">¿Los datos son correctos?</p>
+            `);
+            
+            if (!confirmado) return;
             
             await db.from('ventas').delete().eq('fecha', fecha);
             const { error } = await db.from('ventas').insert(ventas);
@@ -1816,30 +1996,16 @@
             } else {
                 showAlert('✅ Ventas guardadas correctamente', 'success');
                 
-                // Verificar si existe arqueo para este día
-                const { data: arqueoExistente } = await db
-                    .from('arqueos')
-                    .select('id')
-                    .eq('fecha', fecha)
-                    .single();
+                const { data: arqueoExistente } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
                 
                 if (!arqueoExistente) {
-                    // No hay arqueo, mostrar advertencia persistente
                     const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
                     const alertDiv = document.getElementById('alertSobrantes');
                     alertDiv.className = 'alert alert-warning';
-                    alertDiv.innerHTML = `
-                        ⚠️ <strong>IMPORTANTE:</strong> Guardaste las ventas del ${fechaFormateada} pero aún <strong>NO has guardado el arqueo de caja</strong> de ese día.
-                        <br><br>
-                        Por favor, ve a la pestaña <strong>💰 Arqueo de Caja</strong> para completar el cierre del día.
-                    `;
-                    
-                    // También mostrar alerta flotante
+                    alertDiv.innerHTML = `⚠️ <strong>IMPORTANTE:</strong> Guardaste las ventas del ${fechaFormateada} pero aún <strong>NO has guardado el arqueo de caja</strong>.<br><br>Por favor, ve a la pestaña <strong>💰 Arqueo de Caja</strong> para completar el cierre del día.`;
                     showAlert('⚠️ Recuerda: Falta el arqueo de caja del día ' + fechaFormateada, 'warning');
                 } else {
-                    // Hay arqueo, limpiar alerta
-                    const alertDiv = document.getElementById('alertSobrantes');
-                    alertDiv.className = 'hidden';
+                    document.getElementById('alertSobrantes').className = 'hidden';
                 }
             }
         }
@@ -1876,6 +2042,7 @@
                     'sencilloInicio',
                     'transferencias',
                     'pedidosYa',
+                    'monchis',
                     'pos'
                 ];
                 
@@ -1921,7 +2088,7 @@
             document.getElementById('ventaDelDia').textContent = `₲ ${total.toLocaleString()}`;
             
             // Cargar gastos del arqueo si existe
-            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).single();
+            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
             
             if (arqueoData) {
                 const { data: gastosData } = await db.from('gastos').select('*').eq('arqueo_id', arqueoData.id);
@@ -1942,11 +2109,11 @@
             const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
             const transferencias = parseInt(document.getElementById('transferencias').value) || 0;
             const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
+            const monchis = parseInt(document.getElementById('monchis').value) || 0;
             const pos = parseInt(document.getElementById('pos').value) || 0;
             const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
             
-            // Los gastos se SUMAN porque salieron de la caja que ya contamos
-            const totalTiene = efectivo + transferencias + pedidosYa + pos + totalGastos;
+            const totalTiene = efectivo + transferencias + pedidosYa + monchis + pos + totalGastos;
             const debeTener = ventaDelDiaActual + sencillo;
             const diferencia = totalTiene - debeTener;
             
@@ -1965,15 +2132,21 @@
         }
         
         function agregarGasto() {
-            const concepto = prompt('Concepto del gasto:');
-            if (!concepto) return;
+            const concepto = document.getElementById('gastoConcepto').value.trim();
+            const categoria = document.getElementById('gastoCategoria').value;
+            const monto = parseInt(document.getElementById('gastoMonto').value);
             
-            const monto = parseInt(prompt('Monto del gasto (₲):'));
-            if (!monto || monto <= 0) return;
+            if (!concepto) { showAlert('⚠️ Ingresá el concepto del gasto', 'warning'); document.getElementById('gastoConcepto').focus(); return; }
+            if (!monto || monto <= 0) { showAlert('⚠️ Ingresá un monto válido', 'warning'); document.getElementById('gastoMonto').focus(); return; }
             
-            gastos.push({ concepto, monto });
+            gastos.push({ concepto, categoria, monto });
             renderGastos();
             calcularRendicion();
+            
+            // Limpiar campos
+            document.getElementById('gastoConcepto').value = '';
+            document.getElementById('gastoMonto').value = '';
+            document.getElementById('gastoConcepto').focus();
         }
         
         function renderGastos() {
@@ -1990,6 +2163,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 6px; margin-bottom: 0.5rem;">
                             <div>
                                 <div style="font-weight: 600; color: var(--secondary);">${g.concepto}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.2rem;">📂 ${g.categoria || 'Sin categoría'}</div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 1rem;">
                                 <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</span>
@@ -2014,11 +2188,24 @@
             const responsable = document.getElementById('arqueoResponsable').value;
             if (!fecha || !responsable) { showAlert('⚠️ Completa todos los campos', 'warning'); return; }
             
+            // Validar que existan ventas para este día
+            const { data: ventasDelDia } = await db.from('ventas').select('id').eq('fecha', fecha).limit(1);
+            if (!ventasDelDia || ventasDelDia.length === 0) {
+                const fechaFmt = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
+                const igualContinuar = await mostrarModalConfirmacion(`
+                    <h3 style="color:var(--danger);margin-bottom:1rem;">⚠️ Sin ventas registradas</h3>
+                    <p>No hay ventas registradas para el <strong>${fechaFmt}</strong>.</p>
+                    <p style="margin-top:0.75rem;">¿Querés guardar el arqueo igual? (por ejemplo, día sin actividad)</p>
+                `);
+                if (!igualContinuar) return;
+            }
+            
             const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
             const efectivo = calcularTotalEfectivo();
             const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
             const transferencias = parseInt(document.getElementById('transferencias').value) || 0;
             const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
+            const monchis = parseInt(document.getElementById('monchis').value) || 0;
             const pos = parseInt(document.getElementById('pos').value) || 0;
             
             const arqueo = {
@@ -2026,35 +2213,37 @@
                 sencillo_inicio: sencillo,
                 transferencias: transferencias,
                 pedidos_ya: pedidosYa,
+                monchis: monchis,
                 pos: pos,
                 gastos: totalGastos,
-                diferencia: (efectivo + transferencias + pedidosYa + pos + totalGastos) - (ventaDelDiaActual + sencillo)
+                diferencia: (efectivo + transferencias + pedidosYa + monchis + pos + totalGastos) - (ventaDelDiaActual + sencillo)
             };
             
-            // Guardar arqueo
             const { error } = await db.from('arqueos').upsert(arqueo, { onConflict: 'fecha' });
-            if (error) { showAlert('❌ Error: ' + error.message, 'danger'); return; }
+            if (error) { showAlert('❌ Error al guardar arqueo: ' + error.message, 'danger'); return; }
             
-            // Obtener ID del arqueo
-            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).single();
+            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
             
-            if (arqueoData && gastos.length > 0) {
-                // Eliminar gastos anteriores de este arqueo
+            if (arqueoData) {
+                // Guardar gastos: primero eliminar los anteriores, luego insertar
                 await db.from('gastos').delete().eq('arqueo_id', arqueoData.id);
                 
-                // Insertar nuevos gastos
-                const gastosConId = gastos.map(g => ({
-                    arqueo_id: arqueoData.id,
-                    concepto: g.concepto,
-                    monto: g.monto
-                }));
-                
-                await db.from('gastos').insert(gastosConId);
+                if (gastos.length > 0) {
+                    const gastosConId = gastos.map(g => ({
+                        arqueo_id: arqueoData.id,
+                        concepto: g.concepto,
+                        categoria: g.categoria || 'Otros',
+                        monto: g.monto
+                    }));
+                    const { error: errorGastos } = await db.from('gastos').insert(gastosConId);
+                    if (errorGastos) {
+                        showAlert('⚠️ Arqueo guardado pero hubo un error con los gastos: ' + errorGastos.message, 'warning');
+                        return;
+                    }
+                }
             }
             
             showAlert('✅ Arqueo guardado correctamente', 'success');
-            
-            // Limpiar formulario después de guardar
             limpiarFormularioArqueo();
         }
         
@@ -2075,6 +2264,7 @@
             document.getElementById('sencilloInicio').value = 0;
             document.getElementById('transferencias').value = 0;
             document.getElementById('pedidosYa').value = 0;
+            document.getElementById('monchis').value = 0;
             document.getElementById('pos').value = 0;
             
             // Limpiar gastos
@@ -2244,6 +2434,23 @@
                 return;
             }
             
+            const totalAveriadosDash = ventasPeriodo.reduce((sum, v) => sum + (v.averiados || 0), 0);
+            const perdidaAveriados = ventasPeriodo.reduce((sum, v) => sum + (v.averiados || 0) * (v.costo_unitario || 0), 0);
+            
+            // Días con ventas pero sin arqueo
+            const fechasConVentas = [...new Set(ventasPeriodo.map(v => v.fecha))];
+            const fechasConArqueo = arqueosPeriodo ? new Set(arqueosPeriodo.map(a => a.fecha)) : new Set();
+            const diasSinArqueo = fechasConVentas.filter(f => !fechasConArqueo.has(f));
+            
+            // Mostrar alertas de control en dashboard
+            const alertasDash = document.getElementById('alertasDashboard');
+            let alertasHtml = '';
+            if (diasSinArqueo.length > 0) {
+                const listaFechas = diasSinArqueo.map(f => new Date(f + 'T00:00:00').toLocaleDateString('es-PY', { day: '2-digit', month: 'short' })).join(', ');
+                alertasHtml += `<div class="alert alert-danger" style="display:flex;justify-content:space-between;align-items:center;"><span>🚨 <strong>${diasSinArqueo.length} día(s) sin arqueo de caja:</strong> ${listaFechas}</span><button onclick="showTab('historial')" class="btn btn-danger" style="padding:0.4rem 1rem;font-size:0.85rem;">Ver Historial</button></div>`;
+            }
+            if (alertasDash) alertasDash.innerHTML = alertasHtml;
+            
             // ========== CÁLCULOS PRINCIPALES ==========
             const totalPeriodo = ventasPeriodo.reduce((sum, v) => sum + v.ingreso, 0);
             const totalPeriodoAnterior = ventasPeriodoAnterior ? ventasPeriodoAnterior.reduce((sum, v) => sum + v.ingreso, 0) : 0;
@@ -2253,9 +2460,10 @@
             const totalSobrantes = ventasPeriodo.reduce((sum, v) => sum + v.sobrante, 0);
             const totalCostos = totalPeriodo - gananciaPeriodo;
             
-            // Cálculos de arqueos (POS, Pedidos Ya, Gastos, Efectivo, Transferencias)
+            // Cálculos de arqueos (POS, Pedidos Ya, Monchis, Gastos, Efectivo, Transferencias)
             let totalPOS = 0;
             let totalPedidosYa = 0;
+            let totalMonchisDash = 0;
             let totalGastos = 0;
             let totalEfectivo = 0;
             let totalTransferencias = 0;
@@ -2263,12 +2471,13 @@
             if (arqueosPeriodo) {
                 totalPOS = arqueosPeriodo.reduce((sum, a) => sum + (a.pos || 0), 0);
                 totalPedidosYa = arqueosPeriodo.reduce((sum, a) => sum + (a.pedidos_ya || 0), 0);
+                totalMonchisDash = arqueosPeriodo.reduce((sum, a) => sum + (a.monchis || 0), 0);
                 totalGastos = arqueosPeriodo.reduce((sum, a) => sum + (a.gastos || 0), 0);
                 totalEfectivo = arqueosPeriodo.reduce((sum, a) => sum + (a.efectivo || 0), 0);
                 totalTransferencias = arqueosPeriodo.reduce((sum, a) => sum + (a.transferencias || 0), 0);
             }
             
-            const totalPagos = totalEfectivo + totalPOS + totalPedidosYa + totalTransferencias;
+            const totalPagos = totalEfectivo + totalPOS + totalPedidosYa + totalMonchisDash + totalTransferencias;
             
             // Días trabajados
             const fechasUnicas = [...new Set(ventasPeriodo.map(v => v.fecha))];
@@ -2301,6 +2510,7 @@
             const porcentajeTransferencias = totalPagos > 0 ? ((totalTransferencias / totalPagos) * 100).toFixed(1) : 0;
             const porcentajePOS = totalPagos > 0 ? ((totalPOS / totalPagos) * 100).toFixed(1) : 0;
             const porcentajePedidosYa = totalPagos > 0 ? ((totalPedidosYa / totalPagos) * 100).toFixed(1) : 0;
+            const porcentajeMonchis = totalPagos > 0 ? ((totalMonchisDash / totalPagos) * 100).toFixed(1) : 0;
             
             // ========== ACTUALIZAR UI - ESTADÍSTICAS PRINCIPALES ==========
             document.getElementById('ventaMes').textContent = `₲ ${totalPeriodo.toLocaleString()}`;
@@ -2328,6 +2538,9 @@
             document.getElementById('totalPedidosYa').textContent = `₲ ${totalPedidosYa.toLocaleString()}`;
             document.getElementById('porcentajePedidosYa').textContent = `${porcentajePedidosYa}% del total`;
             
+            document.getElementById('totalMonchis').textContent = `₲ ${totalMonchisDash.toLocaleString()}`;
+            document.getElementById('porcentajeMonchis').textContent = `${porcentajeMonchis}% del total`;
+            
             document.getElementById('totalGastosPeriodo').textContent = `₲ ${totalGastos.toLocaleString()}`;
             
             // Estadísticas secundarias
@@ -2344,6 +2557,8 @@
             document.getElementById('totalVendidos').textContent = totalUnidades.toLocaleString();
             document.getElementById('totalSobrantes').textContent = totalSobrantes.toLocaleString();
             document.getElementById('eficiencia').textContent = eficiencia + '%';
+            if (document.getElementById('totalAveriadosDash')) document.getElementById('totalAveriadosDash').textContent = totalAveriadosDash.toLocaleString();
+            if (document.getElementById('perdidaAveriados')) document.getElementById('perdidaAveriados').textContent = `₲ ${perdidaAveriados.toLocaleString()}`;
             
             // Análisis financiero
             document.getElementById('ingresosTotal').textContent = `₲ ${totalPeriodo.toLocaleString()}`;
