@@ -2292,7 +2292,7 @@
                 limpiarArqueoDraft(fecha);
                 const { data: gastosData } = await db.from('gastos').select('*').eq('arqueo_id', arqueoData.id);
                 if (gastosData) {
-                    gastos = gastosData.map(g => ({ concepto: g.concepto, monto: g.monto }));
+                    gastos = gastosData.map(g => ({ concepto: g.concepto, categoria: g.categoria || 'Otros', monto: g.monto }));
                     renderGastos();
                 }
             } else {
@@ -2368,6 +2368,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 6px; margin-bottom: 0.5rem;">
                             <div>
                                 <div style="font-weight: 600; color: var(--secondary);">${g.concepto}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light);">${g.categoria || 'Otros'}</div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 1rem;">
                                 <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</span>
@@ -2437,6 +2438,7 @@
                     const gastosConId = gastos.map(g => ({
                         arqueo_id: arqueoData.id,
                         concepto: g.concepto,
+                        categoria: g.categoria || 'Otros',
                         monto: g.monto
                     }));
                     const { error: errorGastos } = await db.from('gastos').insert(gastosConId);
@@ -3043,10 +3045,10 @@
                 return;
             }
 
-            // Obtener arqueos del período para conseguir sus IDs y fechas
+            // Obtener arqueos del período para conseguir sus IDs, fechas y gastos legacy
             const { data: arqueos } = await db
                 .from('arqueos')
-                .select('id, fecha')
+                .select('id, fecha, gastos')
                 .gte('fecha', desde)
                 .lte('fecha', hasta)
                 .order('fecha', { ascending: false });
@@ -3059,7 +3061,11 @@
 
             const arqueoIds = arqueos.map(a => a.id);
             const arqueoFechaMap = {};
-            arqueos.forEach(a => arqueoFechaMap[a.id] = a.fecha);
+            const arqueoMap = {};
+            arqueos.forEach(a => {
+                arqueoFechaMap[a.id] = a.fecha;
+                arqueoMap[a.id] = a;
+            });
 
             // Obtener todos los gastos de esos arqueos
             const { data: gastosData } = await db
@@ -3067,16 +3073,33 @@
                 .select('*')
                 .in('arqueo_id', arqueoIds);
 
-            if (!gastosData || gastosData.length === 0) {
-                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
-                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
-                return;
-            }
+            const gastosDetallados = Array.isArray(gastosData) ? gastosData : [];
+            const arqueosConDetalle = new Set(gastosDetallados.map(g => g.arqueo_id));
+
+            // Compatibilidad con datos viejos: si un arqueo tiene total de gastos pero no detalle,
+            // lo mostramos como gasto heredado para que no desaparezca del historial.
+            const gastosLegacy = arqueos
+                .filter(a => !arqueosConDetalle.has(a.id) && Number(a.gastos || 0) > 0)
+                .map(a => ({
+                    arqueo_id: a.id,
+                    fecha: a.fecha,
+                    concepto: 'Gasto general (registro anterior)',
+                    categoria: 'Legacy',
+                    monto: Number(a.gastos || 0),
+                    legacy: true
+                }));
 
             // Agregar fecha a cada gasto y ordenar por fecha descendente
-            const gastosConFecha = gastosData
-                .map(g => ({ ...g, fecha: arqueoFechaMap[g.arqueo_id] }))
-                .filter(g => g.fecha) // descartar gastos sin fecha válida
+            const gastosConFecha = [
+                ...gastosDetallados.map(g => ({
+                    ...g,
+                    fecha: arqueoFechaMap[g.arqueo_id],
+                    categoria: g.categoria || 'Otros',
+                    legacy: false
+                })),
+                ...gastosLegacy
+            ]
+                .filter(g => g.fecha)
                 .sort((a, b) => b.fecha.localeCompare(a.fecha));
 
             if (gastosConFecha.length === 0) {
@@ -3092,7 +3115,7 @@
                 if (!porConcepto[key]) porConcepto[key] = 0;
                 porConcepto[key] += g.monto;
             });
-            const totalGastosPeriodo = gastosConFecha.reduce((s, g) => s + g.monto, 0);
+            const totalGastosPeriodo = gastosConFecha.reduce((s, g) => s + Number(g.monto || 0), 0);
 
             // Render resumen por concepto
             document.getElementById('resumenGastosPorCategoria').innerHTML = `
@@ -3124,6 +3147,7 @@
                         <tr>
                             <th>Fecha</th>
                             <th>Concepto</th>
+                            <th>Categoría</th>
                             <th>Monto</th>
                         </tr>
                     </thead>
@@ -3131,12 +3155,13 @@
                         ${gastosConFecha.map(g => `
                             <tr>
                                 <td style="font-weight: 600;">${new Date(g.fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                <td>${g.concepto}</td>
-                                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</td>
+                                <td>${g.concepto}${g.legacy ? ' <span style="font-size:0.75rem;color:var(--text-light);">(sin detalle histórico)</span>' : ''}</td>
+                                <td>${g.categoria || 'Otros'}</td>
+                                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${Number(g.monto || 0).toLocaleString()}</td>
                             </tr>
                         `).join('')}
                         <tr style="background: var(--bg-main); font-weight: 700;">
-                            <td colspan="2" style="text-align: right; padding-right: 1rem;">TOTAL:</td>
+                            <td colspan="3" style="text-align: right; padding-right: 1rem;">TOTAL:</td>
                             <td style="font-family: 'JetBrains Mono', monospace; color: var(--danger); font-size: 1.1rem;">₲ ${totalGastosPeriodo.toLocaleString()}</td>
                         </tr>
                     </tbody>
