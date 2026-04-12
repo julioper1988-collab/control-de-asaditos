@@ -467,8 +467,8 @@
                 <!-- Formulario inline de gastos -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 0.75rem; align-items: end; background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                     <div>
-                        <label class="form-label" style="font-size: 0.8rem;">Concepto</label>
-                        <input type="text" id="gastoConcepto" class="form-input" placeholder="Ej: Gas, Bolsas..." onkeypress="if(event.key==='Enter') agregarGasto()">
+                        <label class="form-label" style="font-size: 0.8rem;">Nombre / Concepto</label>
+                        <input type="text" id="gastoConcepto" class="form-input" placeholder="Ej: Javier, Chompi, Carbón..." onkeypress="if(event.key==='Enter') agregarGasto()">
                     </div>
                     <div>
                         <label class="form-label" style="font-size: 0.8rem;">Categoría</label>
@@ -676,6 +676,11 @@
                         <div id="notaGastosHistoricosDashboard" style="font-size: 0.8rem; color: var(--text-light);"></div>
                     </div>
                 </div>
+
+                <div id="resumenGastosPorNombreDashboard" style="margin-top: 1rem; background: var(--bg-main); padding: 1.25rem; border-radius: 8px;">
+                    <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 1rem; color: var(--secondary);">👤 Gastos por Nombre / Concepto</div>
+                    <div id="listaGastosPorNombreDashboard" style="color: var(--text-light);">Todavía no hay gastos detallados para este período.</div>
+                </div>
             </div>
             
             <!-- Estadísticas Secundarias -->
@@ -829,7 +834,8 @@
 
                 <button onclick="cargarGastosVarios()" class="btn btn-primary" style="margin-bottom: 1.5rem;">🔍 Buscar</button>
 
-                <div id="resumenGastosPorCategoria" style="margin-bottom: 1.5rem;"></div>
+                <div id="resumenGastosPorCategoria" style="margin-bottom: 1rem;"></div>
+                <div id="resumenGastosPorConcepto" style="margin-bottom: 1.5rem;"></div>
                 <div id="listaGastosVarios"></div>
             </div>
         </div>
@@ -2689,6 +2695,7 @@
             let totalGastosHistoricos = 0;
             let diasConGastoHistorico = 0;
             let totalEfectivo = 0;
+            let gastosDetallePeriodo = [];
             let totalTransferencias = 0;
             
             if (arqueosPeriodo) {
@@ -2699,11 +2706,11 @@
                 totalTransferencias = arqueosPeriodo.reduce((sum, a) => sum + (a.transferencias || 0), 0);
 
                 const arqueoIdsPeriodo = arqueosPeriodo.map(a => a.id).filter(Boolean);
-                let gastosDetallePeriodo = [];
+                gastosDetallePeriodo = [];
                 if (arqueoIdsPeriodo.length > 0) {
                     const { data: gastosDetalleData, error: errorGastosDetalle } = await db
                         .from('gastos')
-                        .select('arqueo_id, monto')
+                        .select('arqueo_id, monto, concepto')
                         .in('arqueo_id', arqueoIdsPeriodo);
                     if (!errorGastosDetalle && gastosDetalleData) {
                         gastosDetallePeriodo = gastosDetalleData;
@@ -2726,6 +2733,18 @@
                 }, 0);
                 totalGastos = totalGastosDetallados + totalGastosHistoricos;
             }
+
+            const gastosPorNombre = {};
+            if (Array.isArray(gastosDetallePeriodo)) {
+                gastosDetallePeriodo.forEach(g => {
+                    const nombre = (g.concepto || 'Sin nombre').trim() || 'Sin nombre';
+                    if (!gastosPorNombre[nombre]) gastosPorNombre[nombre] = 0;
+                    gastosPorNombre[nombre] += Number(g.monto) || 0;
+                });
+            }
+            const rankingGastosPorNombre = Object.entries(gastosPorNombre)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 12);
             
             const totalPagos = totalEfectivo + totalPOS + totalPedidosYa + totalMonchisDash + totalTransferencias;
             
@@ -2797,6 +2816,26 @@
             document.getElementById('notaGastosHistoricosDashboard').textContent = totalGastosHistoricos > 0
                 ? `Hay ${diasConGastoHistorico} día(s) con gastos antiguos sin desglose en la pestaña Gastos Varios.`
                 : 'Todos los gastos del período tienen detalle en Gastos Varios.';
+
+            const listaGastosPorNombreDashboard = document.getElementById('listaGastosPorNombreDashboard');
+            if (listaGastosPorNombreDashboard) {
+                if (rankingGastosPorNombre.length === 0) {
+                    listaGastosPorNombreDashboard.innerHTML = '<div style="color: var(--text-light);">Todavía no hay gastos detallados para este período.</div>';
+                } else {
+                    const totalDet = totalGastosDetallados || 0;
+                    listaGastosPorNombreDashboard.innerHTML = `
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+                            ${rankingGastosPorNombre.map(([nombre, monto]) => `
+                                <div style="background:white; padding:0.85rem 1rem; border-radius:8px; border-left:4px solid var(--primary);">
+                                    <div style="font-size:0.85rem; color:var(--text-light); margin-bottom:0.25rem;">${nombre}</div>
+                                    <div style="font-family:'JetBrains Mono', monospace; font-weight:800; color:var(--danger); font-size:1.1rem;">₲ ${monto.toLocaleString()}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.25rem;">${totalDet > 0 ? ((monto / totalDet) * 100).toFixed(1) : '0.0'}% del gasto detallado</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            }
             
             // Estadísticas secundarias
             document.getElementById('mejorDia').textContent = `₲ ${mejorDiaVenta.toLocaleString()}`;
@@ -3086,6 +3125,8 @@
             if (totalGastosDetalladosEl) totalGastosDetalladosEl.textContent = '₲ 0';
             if (totalGastosHistoricosEl) totalGastosHistoricosEl.textContent = '₲ 0';
             if (notaGastosHistoricosEl) notaGastosHistoricosEl.textContent = '';
+            const listaGastosPorNombreDashboardEl = document.getElementById('listaGastosPorNombreDashboard');
+            if (listaGastosPorNombreDashboardEl) listaGastosPorNombreDashboardEl.innerHTML = 'Todavía no hay gastos detallados para este período.';
             document.getElementById('topProductos').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos del mes actual</p>';
         }
 
@@ -3110,6 +3151,7 @@
             if (!arqueos || arqueos.length === 0) {
                 document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay arqueos registrados en este período</p>';
                 document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
                 return;
             }
 
@@ -3126,6 +3168,7 @@
             if (!gastosData || gastosData.length === 0) {
                 document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
                 document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
                 return;
             }
 
@@ -3138,6 +3181,7 @@
             if (gastosConFecha.length === 0) {
                 document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
                 document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
                 return;
             }
 
@@ -3149,6 +3193,12 @@
                 porCategoria[key] += g.monto;
             });
             const totalGastosPeriodo = gastosConFecha.reduce((s, g) => s + g.monto, 0);
+            const porConcepto = {};
+            gastosConFecha.forEach(g => {
+                const key = (g.concepto || 'Sin nombre').trim() || 'Sin nombre';
+                if (!porConcepto[key]) porConcepto[key] = 0;
+                porConcepto[key] += g.monto;
+            });
 
             // Render resumen por categoría
             document.getElementById('resumenGastosPorCategoria').innerHTML = `
@@ -3169,6 +3219,21 @@
                     <div style="padding: 0.75rem 1rem; background: white; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--secondary);">
                         <span style="font-weight: 700;">Total de Gastos Detallados:</span>
                         <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem; color: var(--danger);">₲ ${totalGastosPeriodo.toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('resumenGastosPorConcepto').innerHTML = `
+                <div style="background: var(--bg-main); padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: var(--secondary);">👤 Resumen por Nombre / Concepto</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+                        ${Object.entries(porConcepto).sort((a, b) => b[1] - a[1]).map(([concepto, monto]) => `
+                            <div style="background: white; padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--primary);">
+                                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">${concepto}</div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.1rem;">₲ ${monto.toLocaleString()}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">${((monto / totalGastosPeriodo) * 100).toFixed(1)}% del total detallado</div>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>
             `;
