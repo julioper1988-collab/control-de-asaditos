@@ -353,6 +353,7 @@
         <button class="nav-tab" onclick="showTab('catalogo')">📦 Catálogo</button>
         <button class="nav-tab" onclick="showTab('dashboard')">📊 Dashboard</button>
         <button class="nav-tab" onclick="showTab('historial')">📋 Historial</button>
+        <button class="nav-tab" onclick="showTab('gastos')">💸 Gastos Varios</button>
     </div>
     
     <div class="container">
@@ -404,7 +405,7 @@
                 <div class="grid grid-2">
                     <div class="form-group">
                         <label class="form-label">Fecha del Arqueo</label>
-                        <input type="date" id="arqueoFecha" class="form-input">
+                        <input type="date" id="arqueoFecha" class="form-input" onchange="cargarVentaDelDia()">
                     </div>
                     
                     <div class="form-group">
@@ -797,6 +798,31 @@
                 <div id="listaHistorial"></div>
             </div>
             
+        </div>
+
+        <!-- TAB: GASTOS VARIOS -->
+        <div id="tab-gastos" class="tab-content">
+            <div class="card">
+                <div class="card-header">💸 Historial de Gastos Varios</div>
+
+                <div class="grid grid-2" style="margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Fecha Desde</label>
+                        <input type="date" id="gastosDesde" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha Hasta</label>
+                        <input type="date" id="gastosHasta" class="form-input">
+                    </div>
+                </div>
+
+                <button onclick="cargarGastosVarios()" class="btn btn-primary" style="margin-bottom: 1.5rem;">🔍 Buscar</button>
+
+                <div id="resumenGastosPorCategoria" style="margin-bottom: 1.5rem;"></div>
+                <div id="listaGastosVarios"></div>
+            </div>
+        </div>
+
             <!-- Modal de detalle -->
             <div id="modalDetalle" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem;">
                 <div style="background: white; border-radius: 12px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem;">
@@ -807,7 +833,6 @@
                     <div id="modalContenido"></div>
                 </div>
             </div>
-        </div>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -826,37 +851,47 @@
         window.onload = async function() {
             const { createClient } = supabase;
             db = createClient(SUPABASE_URL, SUPABASE_KEY);
-            
+
             await cargarProductos();
             await renderProductosVenta();
             renderDenominaciones();
             renderGastos();
-            
+
             const today = new Date().toISOString().split('T')[0];
             const ventaFechaInput = document.getElementById('ventaFecha');
             ventaFechaInput.value = today;
             ventaFechaInput.setAttribute('data-fecha-cargada', today);
-            
+
             document.getElementById('arqueoFecha').value = today;
-            
+
             // Establecer rango del historial (último mes)
             const hace30dias = new Date();
             hace30dias.setDate(hace30dias.getDate() - 30);
             document.getElementById('historialDesde').value = hace30dias.toISOString().split('T')[0];
             document.getElementById('historialHasta').value = today;
-            
+
             // Establecer rango del dashboard (mes actual)
             const primerDiaMesActual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
             const ultimoDiaMesActual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
             document.getElementById('dashboardDesde').value = primerDiaMesActual.toISOString().split('T')[0];
             document.getElementById('dashboardHasta').value = ultimoDiaMesActual.toISOString().split('T')[0];
-            
+
+            // Establecer rango para gastos varios (último mes)
+            document.getElementById('gastosDesde').value = hace30dias.toISOString().split('T')[0];
+            document.getElementById('gastosHasta').value = today;
+
+            // Restaurar borrador de arqueo si existe (ANTES de cargar de DB)
+            const restauradoArqueo = restaurarArqueoDraft(today);
+            if (restauradoArqueo) {
+                setTimeout(() => showAlert('💾 Se restauró un borrador del arqueo no guardado', 'warning'), 1500);
+            }
+
             // Cargar datos de venta (sobrantes del día anterior si aplica)
             await cargarDatosVenta();
-            
+
             // Verificar si hay días recientes sin datos
             await verificarUltimoDiaRegistrado();
-            
+
             showAlert('✅ Sistema conectado correctamente', 'success');
         };
         
@@ -875,6 +910,121 @@
                     setTimeout(() => showAlert(`⚠️ Último registro: ${fechaFmt} (hace ${diasSinDatos} día${diasSinDatos > 1 ? 's' : ''}). ¿Falta cargar ventas?`, 'warning'), 1500);
                 }
             }
+        }
+
+        // ===== PERSISTENCIA LOCAL (localStorage) — evita pérdida de datos en refresh =====
+
+        function guardarVentasDraft() {
+            const fecha = document.getElementById('ventaFecha').value;
+            if (!fecha || productos.length === 0) return;
+            const datos = {};
+            productos.forEach(p => {
+                const prodHoy = document.getElementById(`prod_hoy_${p.id}`);
+                const aver = document.getElementById(`aver_${p.id}`);
+                const sobr = document.getElementById(`sobr_${p.id}`);
+                const sobAnt = document.getElementById(`sobrant_ant_${p.id}`);
+                if (prodHoy) {
+                    datos[p.id] = {
+                        prod_hoy: prodHoy.value || 0,
+                        aver: aver ? (aver.value || 0) : 0,
+                        sobr: sobr ? (sobr.value || 0) : 0,
+                        sobrant_ant: sobAnt ? (sobAnt.value || 0) : 0
+                    };
+                }
+            });
+            try { localStorage.setItem(`asaditos_ventas_draft_${fecha}`, JSON.stringify(datos)); } catch(e) {}
+        }
+
+        function restaurarVentasDraft(fecha) {
+            try {
+                const guardado = localStorage.getItem(`asaditos_ventas_draft_${fecha}`);
+                if (!guardado) return false;
+                const datos = JSON.parse(guardado);
+                let restaurado = false;
+                productos.forEach(p => {
+                    if (datos[p.id]) {
+                        const prodHoyInput = document.getElementById(`prod_hoy_${p.id}`);
+                        const averInput = document.getElementById(`aver_${p.id}`);
+                        const sobrInput = document.getElementById(`sobr_${p.id}`);
+                        const sobAntInput = document.getElementById(`sobrant_ant_${p.id}`);
+                        if (prodHoyInput) {
+                            if (sobAntInput) { sobAntInput.removeAttribute('readonly'); sobAntInput.value = datos[p.id].sobrant_ant || 0; sobAntInput.setAttribute('readonly', true); }
+                            prodHoyInput.value = datos[p.id].prod_hoy || 0;
+                            if (averInput) averInput.value = datos[p.id].aver || 0;
+                            if (sobrInput) sobrInput.value = datos[p.id].sobr || 0;
+                            calcularProduccionTotal(p.id);
+                            restaurado = true;
+                        }
+                    }
+                });
+                if (restaurado) calcularResumen();
+                return restaurado;
+            } catch(e) { return false; }
+        }
+
+        function limpiarVentasDraft(fecha) {
+            try { localStorage.removeItem(`asaditos_ventas_draft_${fecha}`); } catch(e) {}
+        }
+
+        function guardarArqueoDraft() {
+            const fecha = document.getElementById('arqueoFecha').value;
+            if (!fecha) return;
+            const datos = {
+                responsable: document.getElementById('arqueoResponsable').value,
+                sencilloInicio: document.getElementById('sencilloInicio').value,
+                transferencias: document.getElementById('transferencias').value,
+                pedidosYa: document.getElementById('pedidosYa').value,
+                monchis: document.getElementById('monchis').value,
+                pos: document.getElementById('pos').value,
+                billetes: {},
+                monedas: {},
+                gastos: JSON.parse(JSON.stringify(gastos))
+            };
+            BILLETES.forEach(d => {
+                const el = document.getElementById(`bil_${d}`);
+                if (el) datos.billetes[d] = el.value || 0;
+            });
+            MONEDAS.forEach(d => {
+                const el = document.getElementById(`mon_${d}`);
+                if (el) datos.monedas[d] = el.value || 0;
+            });
+            try { localStorage.setItem(`asaditos_arqueo_draft_${fecha}`, JSON.stringify(datos)); } catch(e) {}
+        }
+
+        function restaurarArqueoDraft(fecha) {
+            try {
+                const guardado = localStorage.getItem(`asaditos_arqueo_draft_${fecha}`);
+                if (!guardado) return false;
+                const datos = JSON.parse(guardado);
+                if (datos.responsable) document.getElementById('arqueoResponsable').value = datos.responsable;
+                if (datos.sencilloInicio) document.getElementById('sencilloInicio').value = datos.sencilloInicio;
+                if (datos.transferencias) document.getElementById('transferencias').value = datos.transferencias;
+                if (datos.pedidosYa) document.getElementById('pedidosYa').value = datos.pedidosYa;
+                if (datos.monchis) document.getElementById('monchis').value = datos.monchis;
+                if (datos.pos) document.getElementById('pos').value = datos.pos;
+                if (datos.billetes) {
+                    BILLETES.forEach(d => {
+                        const el = document.getElementById(`bil_${d}`);
+                        if (el && datos.billetes[d] != null) el.value = datos.billetes[d];
+                    });
+                }
+                if (datos.monedas) {
+                    MONEDAS.forEach(d => {
+                        const el = document.getElementById(`mon_${d}`);
+                        if (el && datos.monedas[d] != null) el.value = datos.monedas[d];
+                    });
+                }
+                if (datos.gastos && Array.isArray(datos.gastos)) {
+                    gastos = datos.gastos;
+                    renderGastos();
+                }
+                calcularArqueo();
+                return true;
+            } catch(e) { return false; }
+        }
+
+        function limpiarArqueoDraft(fecha) {
+            try { localStorage.removeItem(`asaditos_arqueo_draft_${fecha}`); } catch(e) {}
         }
 
         // ===== MODAL DE CONFIRMACIÓN REUTILIZABLE =====
@@ -914,15 +1064,16 @@
         function showTab(tabName) {
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
+
             event.target.classList.add('active');
             document.getElementById('tab-' + tabName).classList.add('active');
-            
+
             if (tabName === 'dashboard') cargarDashboard();
             else if (tabName === 'catalogo') cargarListaProductos();
             else if (tabName === 'arqueo') cargarVentaDelDia();
             else if (tabName === 'historial') cargarHistorial();
             else if (tabName === 'inventario') cargarInventario();
+            else if (tabName === 'gastos') cargarGastosVarios();
         }
         
         async function cargarHistorial() {
@@ -1177,6 +1328,7 @@
                                 <thead>
                                     <tr>
                                         <th>Concepto</th>
+                                        <th>Categoría</th>
                                         <th>Monto</th>
                                     </tr>
                                 </thead>
@@ -1184,11 +1336,12 @@
                                     ${gastos.map(g => `
                                         <tr>
                                             <td style="font-weight: 600;">${g.concepto}</td>
+                                            <td><span style="background: var(--bg-main); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.875rem;">📂 ${g.categoria || 'Sin categoría'}</span></td>
                                             <td style="color: var(--danger); font-weight: 600;">₲ ${g.monto.toLocaleString()}</td>
                                         </tr>
                                     `).join('')}
                                     <tr style="background: var(--bg-main); font-weight: 700;">
-                                        <td>TOTAL</td>
+                                        <td colspan="2">TOTAL</td>
                                         <td style="color: var(--danger);">₲ ${gastos.reduce((sum, g) => sum + g.monto, 0).toLocaleString()}</td>
                                     </tr>
                                 </tbody>
@@ -1647,11 +1800,20 @@
                 .eq('fecha', fechaSeleccionada);
             
             if (ventasHoy && ventasHoy.length > 0) {
-                // Ya hay datos guardados para este día, cargarlos
+                // Ya hay datos guardados en la DB para este día, cargarlos (y limpiar cualquier borrador local)
                 cargarDatosExistentes(ventasHoy);
+                limpiarVentasDraft(fechaSeleccionada);
             } else {
-                // No hay datos, cargar sobrantes del día anterior
-                cargarSobrantesComoProduccion(ventasDiaAnterior, fechaAnterior);
+                // No hay datos en DB — verificar si hay borrador local
+                const restaurado = restaurarVentasDraft(fechaSeleccionada);
+                if (restaurado) {
+                    const alertDiv = document.getElementById('alertSobrantes');
+                    alertDiv.className = 'alert alert-warning';
+                    alertDiv.innerHTML = '💾 <strong>Se restauró un borrador no guardado.</strong> Revisá los datos y guardá cuando termines.';
+                } else {
+                    // No hay datos ni borrador, cargar sobrantes del día anterior
+                    cargarSobrantesComoProduccion(ventasDiaAnterior, fechaAnterior);
+                }
             }
         }
         
@@ -1902,6 +2064,9 @@
                 averCard.textContent = totalAveriados;
                 averCard.closest('.stat-card').style.opacity = totalAveriados > 0 ? '1' : '0.5';
             }
+
+            // Guardar borrador automáticamente
+            guardarVentasDraft();
         }
         
         async function guardarVentas() {
@@ -1995,6 +2160,7 @@
                 showAlert('❌ Error: ' + error.message, 'danger');
             } else {
                 showAlert('✅ Ventas guardadas correctamente', 'success');
+                limpiarVentasDraft(fecha); // Limpiar borrador local
                 
                 const { data: arqueoExistente } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
                 
@@ -2075,32 +2241,39 @@
             
             document.getElementById('totalEfectivo').textContent = `₲ ${total.toLocaleString()}`;
             calcularRendicion();
+            guardarArqueoDraft();
         }
         
         async function cargarVentaDelDia() {
             const fecha = document.getElementById('arqueoFecha').value;
             const { data } = await db.from('ventas').select('ingreso').eq('fecha', fecha);
-            
+
             let total = 0;
             if (data && data.length > 0) total = data.reduce((sum, v) => sum + v.ingreso, 0);
-            
+
             ventaDelDiaActual = total;
             document.getElementById('ventaDelDia').textContent = `₲ ${total.toLocaleString()}`;
-            
-            // Cargar gastos del arqueo si existe
+
+            // Cargar arqueo existente si hay, sino verificar borrador local
             const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
-            
+
             if (arqueoData) {
+                // Hay arqueo guardado en DB — limpiar cualquier borrador local obsoleto
+                limpiarArqueoDraft(fecha);
                 const { data: gastosData } = await db.from('gastos').select('*').eq('arqueo_id', arqueoData.id);
                 if (gastosData) {
-                    gastos = gastosData.map(g => ({ concepto: g.concepto, monto: g.monto }));
+                    gastos = gastosData.map(g => ({ concepto: g.concepto, categoria: g.categoria || 'Otros', monto: g.monto }));
                     renderGastos();
                 }
             } else {
-                gastos = [];
-                renderGastos();
+                // No hay arqueo en DB — verificar borrador local
+                const restaurado = restaurarArqueoDraft(fecha);
+                if (!restaurado) {
+                    gastos = [];
+                    renderGastos();
+                }
             }
-            
+
             calcularRendicion();
         }
         
@@ -2122,6 +2295,7 @@
             document.getElementById('debeTener').textContent = `₲ ${debeTener.toLocaleString()}`;
             document.getElementById('diferencia').textContent = `₲ ${diferencia.toLocaleString()}`;
             document.getElementById('diferencia').style.color = diferencia >= 0 ? 'var(--success)' : 'var(--danger)';
+            guardarArqueoDraft();
         }
         
         function calcularTotalEfectivo() {
@@ -2142,7 +2316,8 @@
             gastos.push({ concepto, categoria, monto });
             renderGastos();
             calcularRendicion();
-            
+            guardarArqueoDraft();
+
             // Limpiar campos
             document.getElementById('gastoConcepto').value = '';
             document.getElementById('gastoMonto').value = '';
@@ -2180,6 +2355,7 @@
                 gastos.splice(index, 1);
                 renderGastos();
                 calcularRendicion();
+                guardarArqueoDraft();
             }
         }
         
@@ -2248,6 +2424,9 @@
         }
         
         function limpiarFormularioArqueo() {
+            const fechaArqueo = document.getElementById('arqueoFecha').value;
+            limpiarArqueoDraft(fechaArqueo); // Limpiar borrador local
+
             // Limpiar billetes
             BILLETES.forEach(d => {
                 document.getElementById(`bil_${d}`).value = 0;
@@ -2824,6 +3003,112 @@
             document.getElementById('gananciaMes').textContent = '₲ 0';
             document.getElementById('promedioDiario').textContent = '₲ 0';
             document.getElementById('topProductos').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos del mes actual</p>';
+        }
+
+        // ===== GASTOS VARIOS =====
+        async function cargarGastosVarios() {
+            const desde = document.getElementById('gastosDesde').value;
+            const hasta = document.getElementById('gastosHasta').value;
+
+            if (!desde || !hasta) {
+                showAlert('⚠️ Seleccioná un rango de fechas', 'warning');
+                return;
+            }
+
+            // Obtener arqueos del período para conseguir sus IDs y fechas
+            const { data: arqueos } = await db
+                .from('arqueos')
+                .select('id, fecha')
+                .gte('fecha', desde)
+                .lte('fecha', hasta)
+                .order('fecha', { ascending: false });
+
+            if (!arqueos || arqueos.length === 0) {
+                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay arqueos registrados en este período</p>';
+                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                return;
+            }
+
+            const arqueoIds = arqueos.map(a => a.id);
+            const arqueoFechaMap = {};
+            arqueos.forEach(a => arqueoFechaMap[a.id] = a.fecha);
+
+            // Obtener todos los gastos de esos arqueos
+            const { data: gastosData } = await db
+                .from('gastos')
+                .select('*')
+                .in('arqueo_id', arqueoIds);
+
+            if (!gastosData || gastosData.length === 0) {
+                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
+                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                return;
+            }
+
+            // Agregar fecha a cada gasto y ordenar por fecha descendente
+            const gastosConFecha = gastosData
+                .map(g => ({ ...g, fecha: arqueoFechaMap[g.arqueo_id] }))
+                .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+            // Totales por categoría
+            const porCategoria = {};
+            gastosConFecha.forEach(g => {
+                const cat = g.categoria || 'Sin categoría';
+                if (!porCategoria[cat]) porCategoria[cat] = 0;
+                porCategoria[cat] += g.monto;
+            });
+            const totalGastosPeriodo = gastosConFecha.reduce((s, g) => s + g.monto, 0);
+
+            // Render resumen por categoría
+            document.getElementById('resumenGastosPorCategoria').innerHTML = `
+                <div style="background: var(--bg-main); padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: var(--secondary);">📊 Resumen por Categoría</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                        ${Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).map(([cat, monto]) => `
+                            <div style="background: white; padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--danger);">
+                                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">📂 ${cat}</div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.1rem;">₲ ${monto.toLocaleString()}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">${((monto / totalGastosPeriodo) * 100).toFixed(1)}% del total</div>
+                                <div style="background: var(--border); height: 4px; border-radius: 2px; margin-top: 0.5rem; overflow: hidden;">
+                                    <div style="width: ${((monto / totalGastosPeriodo) * 100).toFixed(1)}%; background: var(--danger); height: 100%;"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="padding: 0.75rem 1rem; background: white; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--secondary);">
+                        <span style="font-weight: 700;">Total Gastos del Período:</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem; color: var(--danger);">₲ ${totalGastosPeriodo.toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+
+            // Render tabla detallada
+            document.getElementById('listaGastosVarios').innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Concepto</th>
+                            <th>Categoría</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${gastosConFecha.map(g => `
+                            <tr>
+                                <td style="font-weight: 600;">${new Date(g.fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                <td>${g.concepto}</td>
+                                <td><span style="background: var(--bg-main); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.875rem;">📂 ${g.categoria || 'Sin categoría'}</span></td>
+                                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                        <tr style="background: var(--bg-main); font-weight: 700;">
+                            <td colspan="3" style="text-align: right; padding-right: 1rem;">TOTAL:</td>
+                            <td style="font-family: 'JetBrains Mono', monospace; color: var(--danger); font-size: 1.1rem;">₲ ${totalGastosPeriodo.toLocaleString()}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
         }
     </script>
 </body>
