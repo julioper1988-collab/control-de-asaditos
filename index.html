@@ -660,9 +660,20 @@
                     </div>
                 </div>
                 <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
                         <span style="font-weight: 600;">Total Gastos del Período:</span>
                         <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.25rem;" id="totalGastosPeriodo">₲ 0</span>
+                    </div>
+                    <div style="margin-top: 0.75rem; display: grid; gap: 0.4rem; font-size: 0.9rem;">
+                        <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                            <span style="color: var(--text-light);">Detalle cargado en Gastos Varios:</span>
+                            <span id="totalGastosDetalladosPeriodo" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                            <span style="color: var(--text-light);">Gastos históricos sin detalle:</span>
+                            <span id="totalGastosHistoricosPeriodo" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                        </div>
+                        <div id="notaGastosHistoricosDashboard" style="font-size: 0.8rem; color: var(--text-light);"></div>
                     </div>
                 </div>
             </div>
@@ -2368,7 +2379,7 @@
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 6px; margin-bottom: 0.5rem;">
                             <div>
                                 <div style="font-weight: 600; color: var(--secondary);">${g.concepto}</div>
-                                <div style="font-size: 0.8rem; color: var(--text-light);">${g.categoria || 'Otros'}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.15rem;">${g.categoria || 'Otros'}</div>
                             </div>
                             <div style="display: flex; align-items: center; gap: 1rem;">
                                 <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</span>
@@ -2674,6 +2685,9 @@
             let totalPedidosYa = 0;
             let totalMonchisDash = 0;
             let totalGastos = 0;
+            let totalGastosDetallados = 0;
+            let totalGastosHistoricos = 0;
+            let diasConGastoHistorico = 0;
             let totalEfectivo = 0;
             let totalTransferencias = 0;
             
@@ -2681,9 +2695,36 @@
                 totalPOS = arqueosPeriodo.reduce((sum, a) => sum + (a.pos || 0), 0);
                 totalPedidosYa = arqueosPeriodo.reduce((sum, a) => sum + (a.pedidos_ya || 0), 0);
                 totalMonchisDash = arqueosPeriodo.reduce((sum, a) => sum + (a.monchis || 0), 0);
-                totalGastos = arqueosPeriodo.reduce((sum, a) => sum + (a.gastos || 0), 0);
                 totalEfectivo = arqueosPeriodo.reduce((sum, a) => sum + (a.efectivo || 0), 0);
                 totalTransferencias = arqueosPeriodo.reduce((sum, a) => sum + (a.transferencias || 0), 0);
+
+                const arqueoIdsPeriodo = arqueosPeriodo.map(a => a.id).filter(Boolean);
+                let gastosDetallePeriodo = [];
+                if (arqueoIdsPeriodo.length > 0) {
+                    const { data: gastosDetalleData, error: errorGastosDetalle } = await db
+                        .from('gastos')
+                        .select('arqueo_id, monto')
+                        .in('arqueo_id', arqueoIdsPeriodo);
+                    if (!errorGastosDetalle && gastosDetalleData) {
+                        gastosDetallePeriodo = gastosDetalleData;
+                    }
+                }
+
+                const gastoDetalladoPorArqueo = {};
+                gastosDetallePeriodo.forEach(g => {
+                    if (!gastoDetalladoPorArqueo[g.arqueo_id]) gastoDetalladoPorArqueo[g.arqueo_id] = 0;
+                    gastoDetalladoPorArqueo[g.arqueo_id] += Number(g.monto) || 0;
+                });
+
+                totalGastosDetallados = gastosDetallePeriodo.reduce((sum, g) => sum + (Number(g.monto) || 0), 0);
+                totalGastosHistoricos = arqueosPeriodo.reduce((sum, a) => {
+                    const totalArqueo = Number(a.gastos) || 0;
+                    const detallado = gastoDetalladoPorArqueo[a.id] || 0;
+                    const historico = Math.max(0, totalArqueo - detallado);
+                    if (historico > 0) diasConGastoHistorico++;
+                    return sum + historico;
+                }, 0);
+                totalGastos = totalGastosDetallados + totalGastosHistoricos;
             }
             
             const totalPagos = totalEfectivo + totalPOS + totalPedidosYa + totalMonchisDash + totalTransferencias;
@@ -2751,6 +2792,11 @@
             document.getElementById('porcentajeMonchis').textContent = `${porcentajeMonchis}% del total`;
             
             document.getElementById('totalGastosPeriodo').textContent = `₲ ${totalGastos.toLocaleString()}`;
+            document.getElementById('totalGastosDetalladosPeriodo').textContent = `₲ ${totalGastosDetallados.toLocaleString()}`;
+            document.getElementById('totalGastosHistoricosPeriodo').textContent = `₲ ${totalGastosHistoricos.toLocaleString()}`;
+            document.getElementById('notaGastosHistoricosDashboard').textContent = totalGastosHistoricos > 0
+                ? `Hay ${diasConGastoHistorico} día(s) con gastos antiguos sin desglose en la pestaña Gastos Varios.`
+                : 'Todos los gastos del período tienen detalle en Gastos Varios.';
             
             // Estadísticas secundarias
             document.getElementById('mejorDia').textContent = `₲ ${mejorDiaVenta.toLocaleString()}`;
@@ -3032,6 +3078,14 @@
             document.getElementById('ventaMes').textContent = '₲ 0';
             document.getElementById('gananciaMes').textContent = '₲ 0';
             document.getElementById('promedioDiario').textContent = '₲ 0';
+            const totalGastosPeriodoEl = document.getElementById('totalGastosPeriodo');
+            const totalGastosDetalladosEl = document.getElementById('totalGastosDetalladosPeriodo');
+            const totalGastosHistoricosEl = document.getElementById('totalGastosHistoricosPeriodo');
+            const notaGastosHistoricosEl = document.getElementById('notaGastosHistoricosDashboard');
+            if (totalGastosPeriodoEl) totalGastosPeriodoEl.textContent = '₲ 0';
+            if (totalGastosDetalladosEl) totalGastosDetalladosEl.textContent = '₲ 0';
+            if (totalGastosHistoricosEl) totalGastosHistoricosEl.textContent = '₲ 0';
+            if (notaGastosHistoricosEl) notaGastosHistoricosEl.textContent = '';
             document.getElementById('topProductos').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos del mes actual</p>';
         }
 
@@ -3045,10 +3099,10 @@
                 return;
             }
 
-            // Obtener arqueos del período para conseguir sus IDs, fechas y gastos legacy
+            // Obtener arqueos del período para conseguir sus IDs y fechas
             const { data: arqueos } = await db
                 .from('arqueos')
-                .select('id, fecha, gastos')
+                .select('id, fecha')
                 .gte('fecha', desde)
                 .lte('fecha', hasta)
                 .order('fecha', { ascending: false });
@@ -3061,11 +3115,7 @@
 
             const arqueoIds = arqueos.map(a => a.id);
             const arqueoFechaMap = {};
-            const arqueoMap = {};
-            arqueos.forEach(a => {
-                arqueoFechaMap[a.id] = a.fecha;
-                arqueoMap[a.id] = a;
-            });
+            arqueos.forEach(a => arqueoFechaMap[a.id] = a.fecha);
 
             // Obtener todos los gastos de esos arqueos
             const { data: gastosData } = await db
@@ -3073,33 +3123,16 @@
                 .select('*')
                 .in('arqueo_id', arqueoIds);
 
-            const gastosDetallados = Array.isArray(gastosData) ? gastosData : [];
-            const arqueosConDetalle = new Set(gastosDetallados.map(g => g.arqueo_id));
-
-            // Compatibilidad con datos viejos: si un arqueo tiene total de gastos pero no detalle,
-            // lo mostramos como gasto heredado para que no desaparezca del historial.
-            const gastosLegacy = arqueos
-                .filter(a => !arqueosConDetalle.has(a.id) && Number(a.gastos || 0) > 0)
-                .map(a => ({
-                    arqueo_id: a.id,
-                    fecha: a.fecha,
-                    concepto: 'Gasto general (registro anterior)',
-                    categoria: 'Legacy',
-                    monto: Number(a.gastos || 0),
-                    legacy: true
-                }));
+            if (!gastosData || gastosData.length === 0) {
+                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
+                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                return;
+            }
 
             // Agregar fecha a cada gasto y ordenar por fecha descendente
-            const gastosConFecha = [
-                ...gastosDetallados.map(g => ({
-                    ...g,
-                    fecha: arqueoFechaMap[g.arqueo_id],
-                    categoria: g.categoria || 'Otros',
-                    legacy: false
-                })),
-                ...gastosLegacy
-            ]
-                .filter(g => g.fecha)
+            const gastosConFecha = gastosData
+                .map(g => ({ ...g, fecha: arqueoFechaMap[g.arqueo_id] }))
+                .filter(g => g.fecha) // descartar gastos sin fecha válida
                 .sort((a, b) => b.fecha.localeCompare(a.fecha));
 
             if (gastosConFecha.length === 0) {
@@ -3108,23 +3141,23 @@
                 return;
             }
 
-            // Totales por concepto
-            const porConcepto = {};
+            // Totales por categoría
+            const porCategoria = {};
             gastosConFecha.forEach(g => {
-                const key = g.concepto || 'Sin concepto';
-                if (!porConcepto[key]) porConcepto[key] = 0;
-                porConcepto[key] += g.monto;
+                const key = g.categoria || 'Otros';
+                if (!porCategoria[key]) porCategoria[key] = 0;
+                porCategoria[key] += g.monto;
             });
-            const totalGastosPeriodo = gastosConFecha.reduce((s, g) => s + Number(g.monto || 0), 0);
+            const totalGastosPeriodo = gastosConFecha.reduce((s, g) => s + g.monto, 0);
 
-            // Render resumen por concepto
+            // Render resumen por categoría
             document.getElementById('resumenGastosPorCategoria').innerHTML = `
                 <div style="background: var(--bg-main); padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: var(--secondary);">📊 Resumen por Concepto</div>
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: var(--secondary);">📊 Resumen por Categoría</div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
-                        ${Object.entries(porConcepto).sort((a, b) => b[1] - a[1]).map(([concepto, monto]) => `
+                        ${Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).map(([categoria, monto]) => `
                             <div style="background: white; padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--danger);">
-                                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">💸 ${concepto}</div>
+                                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">💸 ${categoria}</div>
                                 <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.1rem;">₲ ${monto.toLocaleString()}</div>
                                 <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">${((monto / totalGastosPeriodo) * 100).toFixed(1)}% del total</div>
                                 <div style="background: var(--border); height: 4px; border-radius: 2px; margin-top: 0.5rem; overflow: hidden;">
@@ -3134,7 +3167,7 @@
                         `).join('')}
                     </div>
                     <div style="padding: 0.75rem 1rem; background: white; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--secondary);">
-                        <span style="font-weight: 700;">Total Gastos del Período:</span>
+                        <span style="font-weight: 700;">Total de Gastos Detallados:</span>
                         <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem; color: var(--danger);">₲ ${totalGastosPeriodo.toLocaleString()}</span>
                     </div>
                 </div>
@@ -3146,8 +3179,8 @@
                     <thead>
                         <tr>
                             <th>Fecha</th>
-                            <th>Concepto</th>
                             <th>Categoría</th>
+                            <th>Concepto</th>
                             <th>Monto</th>
                         </tr>
                     </thead>
@@ -3155,13 +3188,13 @@
                         ${gastosConFecha.map(g => `
                             <tr>
                                 <td style="font-weight: 600;">${new Date(g.fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                <td>${g.concepto}${g.legacy ? ' <span style="font-size:0.75rem;color:var(--text-light);">(sin detalle histórico)</span>' : ''}</td>
                                 <td>${g.categoria || 'Otros'}</td>
-                                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${Number(g.monto || 0).toLocaleString()}</td>
+                                <td>${g.concepto}</td>
+                                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</td>
                             </tr>
                         `).join('')}
                         <tr style="background: var(--bg-main); font-weight: 700;">
-                            <td colspan="3" style="text-align: right; padding-right: 1rem;">TOTAL:</td>
+                            <td colspan="3" style="text-align: right; padding-right: 1rem;">TOTAL DETALLADO:</td>
                             <td style="font-family: 'JetBrains Mono', monospace; color: var(--danger); font-size: 1.1rem;">₲ ${totalGastosPeriodo.toLocaleString()}</td>
                         </tr>
                     </tbody>
