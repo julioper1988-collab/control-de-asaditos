@@ -864,6 +864,13 @@
         
         const BILLETES = [100000, 50000, 20000, 10000, 5000, 2000];
         const MONEDAS = [1000, 500, 100];
+
+        function fechaLocalISO(date = new Date()) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
         
         window.onload = async function() {
             try {
@@ -879,7 +886,7 @@
                 renderDenominaciones();
                 renderGastos();
 
-            const today = new Date().toISOString().split('T')[0];
+            const today = fechaLocalISO();
             const ventaFechaInput = document.getElementById('ventaFecha');
             ventaFechaInput.value = today;
             ventaFechaInput.setAttribute('data-fecha-cargada', today);
@@ -889,17 +896,17 @@
             // Establecer rango del historial (último mes)
             const hace30dias = new Date();
             hace30dias.setDate(hace30dias.getDate() - 30);
-            document.getElementById('historialDesde').value = hace30dias.toISOString().split('T')[0];
+            document.getElementById('historialDesde').value = fechaLocalISO(hace30dias);
             document.getElementById('historialHasta').value = today;
 
             // Establecer rango del dashboard (mes actual)
             const primerDiaMesActual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
             const ultimoDiaMesActual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
-            document.getElementById('dashboardDesde').value = primerDiaMesActual.toISOString().split('T')[0];
-            document.getElementById('dashboardHasta').value = ultimoDiaMesActual.toISOString().split('T')[0];
+            document.getElementById('dashboardDesde').value = fechaLocalISO(primerDiaMesActual);
+            document.getElementById('dashboardHasta').value = fechaLocalISO(ultimoDiaMesActual);
 
             // Establecer rango para gastos varios (último mes)
-            document.getElementById('gastosDesde').value = hace30dias.toISOString().split('T')[0];
+            document.getElementById('gastosDesde').value = fechaLocalISO(hace30dias);
             document.getElementById('gastosHasta').value = today;
 
             // Restaurar borrador de arqueo si existe (ANTES de cargar de DB)
@@ -926,8 +933,8 @@
             if (!data || data.length === 0) return;
             
             const ultimaFecha = data[0].fecha;
-            const hoy = new Date().toISOString().split('T')[0];
-            const ayer = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+            const hoy = fechaLocalISO();
+            const ayer = fechaLocalISO(new Date(Date.now() - 86400000));
             
             if (ultimaFecha < ayer && ultimaFecha !== hoy) {
                 const diasSinDatos = Math.floor((new Date(hoy) - new Date(ultimaFecha)) / 86400000);
@@ -1118,8 +1125,8 @@
                     const hoy = new Date();
                     const hace60 = new Date();
                     hace60.setDate(hoy.getDate() - 60);
-                    hastaEl.value = hoy.toISOString().split('T')[0];
-                    desdeEl.value = hace60.toISOString().split('T')[0];
+                    hastaEl.value = fechaLocalISO(hoy);
+                    desdeEl.value = fechaLocalISO(hace60);
                 }
                 cargarGastosVarios();
             }
@@ -1966,7 +1973,7 @@
             const hoy = new Date();
             const hace30dias = new Date();
             hace30dias.setDate(hace30dias.getDate() - 30);
-            const desde30dias = hace30dias.toISOString().split('T')[0];
+            const desde30dias = fechaLocalISO(hace30dias);
             const { data: ventasMes } = await db
                 .from('ventas')
                 .select('producto_id, vendidos')
@@ -2622,8 +2629,8 @@
             const fechaFinAnterior = new Date(desde);
             fechaFinAnterior.setDate(fechaFinAnterior.getDate() - 1);
             
-            const primerDiaAnterior = fechaInicioAnterior.toISOString().split('T')[0];
-            const ultimoDiaAnterior = fechaFinAnterior.toISOString().split('T')[0];
+            const primerDiaAnterior = fechaLocalISO(fechaInicioAnterior);
+            const ultimoDiaAnterior = fechaLocalISO(fechaFinAnterior);
             
             // Obtener ventas del período
             const { data: ventasPeriodo } = await db
@@ -2652,7 +2659,7 @@
             const { data: ventasUltimos30 } = await db
                 .from('ventas')
                 .select('fecha, ingreso, ganancia')
-                .gte('fecha', hace30dias.toISOString().split('T')[0])
+                .gte('fecha', fechaLocalISO(hace30dias))
                 .order('fecha', { ascending: true });
             
             if (!ventasPeriodo || ventasPeriodo.length === 0) {
@@ -3085,8 +3092,8 @@
             const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
             const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
             
-            document.getElementById('dashboardDesde').value = primerDia.toISOString().split('T')[0];
-            document.getElementById('dashboardHasta').value = ultimoDia.toISOString().split('T')[0];
+            document.getElementById('dashboardDesde').value = fechaLocalISO(primerDia);
+            document.getElementById('dashboardHasta').value = fechaLocalISO(ultimoDia);
             
             cargarDashboard();
         }
@@ -3096,8 +3103,8 @@
             const hace7dias = new Date();
             hace7dias.setDate(hace7dias.getDate() - 7);
             
-            document.getElementById('dashboardDesde').value = hace7dias.toISOString().split('T')[0];
-            document.getElementById('dashboardHasta').value = hoy.toISOString().split('T')[0];
+            document.getElementById('dashboardDesde').value = fechaLocalISO(hace7dias);
+            document.getElementById('dashboardHasta').value = fechaLocalISO(hoy);
             
             cargarDashboard();
         }
@@ -3107,8 +3114,8 @@
             const hace30dias = new Date();
             hace30dias.setDate(hace30dias.getDate() - 30);
             
-            document.getElementById('dashboardDesde').value = hace30dias.toISOString().split('T')[0];
-            document.getElementById('dashboardHasta').value = hoy.toISOString().split('T')[0];
+            document.getElementById('dashboardDesde').value = fechaLocalISO(hace30dias);
+            document.getElementById('dashboardHasta').value = fechaLocalISO(hoy);
             
             cargarDashboard();
         }
