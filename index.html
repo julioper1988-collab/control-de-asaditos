@@ -437,27 +437,27 @@
                 <div class="grid grid-2">
                     <div class="form-group">
                         <label class="form-label">Sencillo de Inicio</label>
-                        <input type="number" id="sencilloInicio" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'sencilloInicio')">
+                        <input type="number" id="sencilloInicio" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'sencilloInicio')">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Transferencias</label>
-                        <input type="number" id="transferencias" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'transferencias')">
+                        <input type="number" id="transferencias" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'transferencias')">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Pedidos Ya</label>
-                        <input type="number" id="pedidosYa" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pedidosYa')">
+                        <input type="number" id="pedidosYa" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pedidosYa')">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">Monchis</label>
-                        <input type="number" id="monchis" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'monchis')">
+                        <input type="number" id="monchis" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'monchis')">
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">POS / Tarjeta</label>
-                        <input type="number" id="pos" class="form-input" value="0" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pos')">
+                        <input type="number" id="pos" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pos')">
                     </div>
                 </div>
                 
@@ -861,6 +861,7 @@
         let productos = [];
         let ventaDelDiaActual = 0;
         let gastos = [];
+        let suspendArqueoDraft = false;
         
         const BILLETES = [100000, 50000, 20000, 10000, 5000, 2000];
         const MONEDAS = [1000, 500, 100];
@@ -870,6 +871,14 @@
             const m = String(date.getMonth() + 1).padStart(2, '0');
             const d = String(date.getDate()).padStart(2, '0');
             return `${y}-${m}-${d}`;
+        }
+
+
+        function formatearFechaConDia(fechaISO, incluirAnho = false) {
+            const opciones = incluirAnho
+                ? { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit' }
+                : { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
+            return new Date(fechaISO + 'T00:00:00').toLocaleDateString('es-PY', opciones);
         }
         
         window.onload = async function() {
@@ -968,11 +977,12 @@
             try { localStorage.setItem(`asaditos_ventas_draft_${fecha}`, JSON.stringify(datos)); } catch(e) {}
         }
 
-        function restaurarVentasDraft(fecha) {
+        function restaurarVentasDraft(fecha, opciones = {}) {
             try {
                 const guardado = localStorage.getItem(`asaditos_ventas_draft_${fecha}`);
                 if (!guardado) return false;
                 const datos = JSON.parse(guardado);
+                const restaurarSobranteAnterior = opciones.restaurarSobranteAnterior !== false;
                 let restaurado = false;
                 productos.forEach(p => {
                     if (datos[p.id]) {
@@ -981,7 +991,7 @@
                         const sobrInput = document.getElementById(`sobr_${p.id}`);
                         const sobAntInput = document.getElementById(`sobrant_ant_${p.id}`);
                         if (prodHoyInput) {
-                            if (sobAntInput) { sobAntInput.removeAttribute('readonly'); sobAntInput.value = datos[p.id].sobrant_ant || 0; sobAntInput.setAttribute('readonly', true); }
+                            if (sobAntInput && restaurarSobranteAnterior) { sobAntInput.removeAttribute('readonly'); sobAntInput.value = datos[p.id].sobrant_ant || 0; sobAntInput.setAttribute('readonly', true); }
                             prodHoyInput.value = datos[p.id].prod_hoy || 0;
                             if (averInput) averInput.value = datos[p.id].aver || 0;
                             if (sobrInput) sobrInput.value = datos[p.id].sobr || 0;
@@ -1000,6 +1010,7 @@
         }
 
         function guardarArqueoDraft() {
+            if (suspendArqueoDraft) return;
             const fecha = document.getElementById('arqueoFecha').value;
             if (!fecha) return;
             const datos = {
@@ -1213,7 +1224,7 @@
                             
                             return `
                                 <tr style="background: ${tieneVenta && !tieneArqueo ? '#fff3cd' : 'white'};">
-                                    <td style="font-weight: 600;">${new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY')}</td>
+                                    <td style="font-weight: 600;">${formatearFechaConDia(fecha)}</td>
                                     <td>${tieneVenta ? '₲ ' + venta.ingreso.toLocaleString() : '-'}</td>
                                     <td style="color: var(--success); font-weight: 600;">${tieneVenta ? '₲ ' + venta.ganancia.toLocaleString() : '-'}</td>
                                     <td>${tieneVenta ? venta.unidades : '-'}</td>
@@ -1771,13 +1782,11 @@
             const fechaSeleccionada = document.getElementById('ventaFecha').value;
             if (!fechaSeleccionada) return;
             
-            // Obtener la fecha actual del input antes de cambiarla
             const fechaActualInput = document.getElementById('ventaFecha');
             const fechaAnteriorCargada = fechaActualInput.getAttribute('data-fecha-cargada');
             
             // Si hay una fecha anterior cargada, verificar que tenga arqueo
             if (fechaAnteriorCargada && fechaAnteriorCargada !== fechaSeleccionada) {
-                // Verificar si hay ventas guardadas para esa fecha
                 const { data: ventasFechaAnterior } = await db
                     .from('ventas')
                     .select('id')
@@ -1785,7 +1794,6 @@
                     .limit(1);
                 
                 if (ventasFechaAnterior && ventasFechaAnterior.length > 0) {
-                    // Hay ventas, verificar si hay arqueo
                     const { data: arqueoAnterior } = await db
                         .from('arqueos')
                         .select('id')
@@ -1793,10 +1801,7 @@
                         .maybeSingle();
                     
                     if (!arqueoAnterior) {
-                        // No hay arqueo para el día con ventas
-                        const fechaFormateada = new Date(fechaAnteriorCargada + 'T00:00:00').toLocaleDateString('es-PY');
-                        
-                        // Crear un modal de advertencia más visible
+                        const fechaFormateada = formatearFechaConDia(fechaAnteriorCargada);
                         const continuar = confirm(
                             `🚨 ADVERTENCIA IMPORTANTE 🚨\n\n` +
                             `El día ${fechaFormateada} tiene VENTAS REGISTRADAS\n` +
@@ -1810,64 +1815,74 @@
                         );
                         
                         if (!continuar) {
-                            // Restaurar la fecha anterior
                             fechaActualInput.value = fechaAnteriorCargada;
-                            
-                            // Mostrar alerta persistente
                             showAlert('⚠️ Cambio de fecha cancelado. Por favor completa el arqueo de caja.', 'warning');
-                            
                             return;
                         } else {
-                            // Usuario confirmó el cambio, mostrar advertencia
                             showAlert('⚠️ RECORDATORIO: Falta arqueo del día ' + fechaFormateada, 'danger');
                         }
                     }
                 }
             }
             
-            // Guardar la nueva fecha como cargada
             fechaActualInput.setAttribute('data-fecha-cargada', fechaSeleccionada);
             
-            // Buscar el día anterior con datos
-            const { data: ventasAnteriores } = await db
-                .from('ventas')
-                .select('*')
-                .lt('fecha', fechaSeleccionada)
-                .order('fecha', { ascending: false })
-                .limit(100);
-            
-            if (!ventasAnteriores || ventasAnteriores.length === 0) {
-                // No hay días anteriores, limpiar todo
-                limpiarFormularioVentas();
-                return;
-            }
-            
-            // Agrupar por fecha y obtener la más reciente
-            const fechasUnicas = [...new Set(ventasAnteriores.map(v => v.fecha))];
-            const fechaAnterior = fechasUnicas[0];
-            const ventasDiaAnterior = ventasAnteriores.filter(v => v.fecha === fechaAnterior);
-            
-            // Verificar si ya hay datos para la fecha seleccionada
+            // 1) Primero verificar si la fecha seleccionada ya tiene ventas guardadas.
+            // Si tiene, se cargan esos datos y no se arrastran sobrantes.
             const { data: ventasHoy } = await db
                 .from('ventas')
                 .select('*')
                 .eq('fecha', fechaSeleccionada);
             
             if (ventasHoy && ventasHoy.length > 0) {
-                // Ya hay datos guardados en la DB para este día, cargarlos (y limpiar cualquier borrador local)
                 cargarDatosExistentes(ventasHoy);
                 limpiarVentasDraft(fechaSeleccionada);
-            } else {
-                // No hay datos en DB — verificar si hay borrador local
-                const restaurado = restaurarVentasDraft(fechaSeleccionada);
-                if (restaurado) {
-                    const alertDiv = document.getElementById('alertSobrantes');
-                    alertDiv.className = 'alert alert-warning';
-                    alertDiv.innerHTML = '💾 <strong>Se restauró un borrador no guardado.</strong> Revisá los datos y guardá cuando termines.';
-                } else {
-                    // No hay datos ni borrador, cargar sobrantes del día anterior
-                    cargarSobrantesComoProduccion(ventasDiaAnterior, fechaAnterior);
-                }
+                return;
+            }
+            
+            // 2) Buscar la última FECHA TRABAJADA anterior, aunque hayan pasado varios días sin abrir.
+            const { data: ultimaFechaData, error: errorUltimaFecha } = await db
+                .from('ventas')
+                .select('fecha')
+                .lt('fecha', fechaSeleccionada)
+                .order('fecha', { ascending: false })
+                .limit(1);
+            
+            if (errorUltimaFecha) {
+                console.error('Error buscando último día trabajado:', errorUltimaFecha);
+                showAlert('❌ No se pudo buscar el último día trabajado: ' + errorUltimaFecha.message, 'danger');
+                limpiarFormularioVentas();
+                return;
+            }
+            
+            if (!ultimaFechaData || ultimaFechaData.length === 0) {
+                limpiarFormularioVentas();
+                return;
+            }
+            
+            const fechaAnterior = ultimaFechaData[0].fecha;
+            const { data: ventasDiaAnterior, error: errorVentasAnterior } = await db
+                .from('ventas')
+                .select('*')
+                .eq('fecha', fechaAnterior);
+            
+            if (errorVentasAnterior) {
+                console.error('Error cargando ventas del último día trabajado:', errorVentasAnterior);
+                showAlert('❌ No se pudieron cargar los sobrantes anteriores: ' + errorVentasAnterior.message, 'danger');
+                limpiarFormularioVentas();
+                return;
+            }
+            
+            // 3) Cargar siempre los sobrantes reales del último día trabajado por producto_id.
+            cargarSobrantesComoProduccion(ventasDiaAnterior || [], fechaAnterior);
+            
+            // 4) Si existe un borrador local para la fecha nueva, restaurar solo campos editables.
+            // No se restaura "Sobrante Ayer" del borrador porque eso puede traer datos viejos, como el 33.
+            const restaurado = restaurarVentasDraft(fechaSeleccionada, { restaurarSobranteAnterior: false });
+            if (restaurado) {
+                const alertDiv = document.getElementById('alertSobrantes');
+                alertDiv.className = 'alert alert-warning';
+                alertDiv.innerHTML += '<br>💾 <strong>También se restauró un borrador no guardado</strong> de producido/averiados/sobrante de hoy. El sobrante anterior se recalculó desde el último día trabajado.';
             }
         }
         
@@ -1935,17 +1950,24 @@
             });
             
             let totalSobrantes = 0;
+            const sobrantesPorProducto = {};
             
-            // Cargar sobrantes en el campo "Sobrante Ayer"
-            ventasDiaAnterior.forEach(v => {
-                if (v.sobrante > 0) {
-                    const sobrantAntInput = document.getElementById(`sobrant_ant_${v.producto_id}`);
-                    const prodInput = document.getElementById(`prod_${v.producto_id}`);
-                    if (sobrantAntInput && prodInput) {
-                        sobrantAntInput.value = v.sobrante;
-                        prodInput.value = v.sobrante; // Total producción = sobrante anterior (por ahora)
-                        totalSobrantes += v.sobrante;
-                    }
+            // Agrupar por producto_id. Esto evita que el sobrante de un producto se mezcle con otro
+            // si cambia el orden de la tabla o si falta algún producto.
+            (ventasDiaAnterior || []).forEach(v => {
+                const productoId = String(v.producto_id);
+                sobrantesPorProducto[productoId] = (sobrantesPorProducto[productoId] || 0) + (Number(v.sobrante) || 0);
+            });
+            
+            productos.forEach(p => {
+                const sobranteAnterior = sobrantesPorProducto[String(p.id)] || 0;
+                const sobrantAntInput = document.getElementById(`sobrant_ant_${p.id}`);
+                const prodInput = document.getElementById(`prod_${p.id}`);
+                
+                if (sobrantAntInput && prodInput) {
+                    sobrantAntInput.value = sobranteAnterior;
+                    prodInput.value = sobranteAnterior; // Total producción inicial = sobrante anterior
+                    totalSobrantes += sobranteAnterior;
                 }
             });
             
@@ -1953,12 +1975,12 @@
             
             const alertDiv = document.getElementById('alertSobrantes');
             if (totalSobrantes > 0) {
-                const fechaFormateada = new Date(fechaAnterior + 'T00:00:00').toLocaleDateString('es-PY');
+                const fechaFormateada = formatearFechaConDia(fechaAnterior);
                 alertDiv.className = 'alert alert-success';
-                alertDiv.innerHTML = `✅ Se cargaron <strong>${totalSobrantes} unidades</strong> de sobrantes del ${fechaFormateada}`;
+                alertDiv.innerHTML = `✅ Se cargaron <strong>${totalSobrantes} unidades sobrantes</strong> del último día trabajado: <strong>${fechaFormateada}</strong>.`;
             } else {
-                alertDiv.className = 'alert alert-info';
-                alertDiv.innerHTML = `ℹ️ No había sobrantes del día anterior para cargar`;
+                alertDiv.className = 'alert alert-warning';
+                alertDiv.innerHTML = `ℹ️ El último día trabajado (${formatearFechaConDia(fechaAnterior)}) no dejó sobrantes.`;
             }
         }
         
@@ -2234,7 +2256,7 @@
             const billetesHtml = BILLETES.map((d, index) => `
                 <div class="denomination-row">
                     <div class="denomination-label">₲ ${d.toLocaleString()}</div>
-                    <input type="number" id="bil_${d}" class="form-input" value="0" onchange="calcularArqueo()" onkeypress="handleEnterArqueo(event, 'bil_${d}')">
+                    <input type="number" id="bil_${d}" class="form-input" value="0" oninput="calcularArqueo()" onchange="calcularArqueo()" onkeypress="handleEnterArqueo(event, 'bil_${d}')">
                     <div class="denomination-total" id="total_bil_${d}">₲ 0</div>
                 </div>
             `).join('');
@@ -2242,7 +2264,7 @@
             const monedasHtml = MONEDAS.map((d, index) => `
                 <div class="denomination-row">
                     <div class="denomination-label">₲ ${d.toLocaleString()}</div>
-                    <input type="number" id="mon_${d}" class="form-input" value="0" onchange="calcularArqueo()" onkeypress="handleEnterArqueo(event, 'mon_${d}')">
+                    <input type="number" id="mon_${d}" class="form-input" value="0" oninput="calcularArqueo()" onchange="calcularArqueo()" onkeypress="handleEnterArqueo(event, 'mon_${d}')">
                     <div class="denomination-total" id="total_mon_${d}">₲ 0</div>
                 </div>
             `).join('');
@@ -2481,6 +2503,9 @@
             const fechaArqueo = document.getElementById('arqueoFecha').value;
             limpiarArqueoDraft(fechaArqueo); // Limpiar borrador local
 
+            // Evitar que el recalculo final vuelva a guardar un borrador después de poner todo en cero.
+            suspendArqueoDraft = true;
+
             // Limpiar billetes
             BILLETES.forEach(d => {
                 document.getElementById(`bil_${d}`).value = 0;
@@ -2499,14 +2524,23 @@
             document.getElementById('pedidosYa').value = 0;
             document.getElementById('monchis').value = 0;
             document.getElementById('pos').value = 0;
+            document.getElementById('gastoConcepto').value = '';
+            document.getElementById('gastoMonto').value = '';
             
             // Limpiar gastos
             gastos = [];
             renderGastos();
             
-            // Recalcular todo
+            // Poner los totales visualmente en cero después de guardar el arqueo.
             document.getElementById('totalEfectivo').textContent = '₲ 0';
-            calcularRendicion();
+            document.getElementById('totalGastos').textContent = '₲ 0';
+            document.getElementById('totalTiene').textContent = '₲ 0';
+            document.getElementById('debeTener').textContent = `₲ ${ventaDelDiaActual.toLocaleString()}`;
+            document.getElementById('diferencia').textContent = `₲ ${(-ventaDelDiaActual).toLocaleString()}`;
+            document.getElementById('diferencia').style.color = ventaDelDiaActual === 0 ? 'var(--success)' : 'var(--danger)';
+
+            suspendArqueoDraft = false;
+            limpiarArqueoDraft(fechaArqueo);
         }
         
         function mostrarFormProducto() {
