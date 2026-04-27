@@ -3465,7 +3465,7 @@
                 const bloque = idsLimpios.slice(i, i + tamanioBloque);
                 const { data, error } = await db
                     .from('gastos')
-                    .select('id, arqueo_id, concepto, persona, monto, created_at')
+                    .select('id, arqueo_id, concepto, persona, categoria, monto, created_at')
                     .in('arqueo_id', bloque);
 
                 if (error) {
@@ -3536,7 +3536,7 @@
                         gastosConFecha.push({
                             arqueo_id: arqueo.id,
                             fecha: arqueo.fecha,
-                            categoria: 'Cena',
+                            categoria: g.categoria || 'Cena',
                             concepto: obtenerNombrePersonaGasto(g),
                             monto,
                             responsable: arqueo.responsable || '',
