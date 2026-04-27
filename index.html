@@ -2532,7 +2532,7 @@
                 limpiarArqueoDraft(fecha);
                 const { data: gastosData } = await db.from('gastos').select('*').eq('arqueo_id', arqueoData.id);
                 if (gastosData) {
-                    gastos = gastosData.map(g => ({ concepto: g.concepto, categoria: g.categoria || 'Otros', monto: g.monto }));
+                    gastos = gastosData.map(g => ({ concepto: obtenerNombrePersonaGasto(g), categoria: 'Cena', monto: Number(g.monto || 0) }));
                     renderGastos();
                 }
             } else {
@@ -2585,6 +2585,15 @@
                 .join(' ');
         }
 
+        function obtenerNombrePersonaGasto(g) {
+            // Tu tabla gastos tiene columnas: id, arqueo_id, concepto, persona, monto, created_at.
+            // No tiene columna categoria. Por eso usamos persona si existe; si no, usamos concepto.
+            let nombre = (g?.persona || g?.concepto || '').trim();
+            nombre = nombre.replace(/^cenas?\s+/i, '').trim();
+            nombre = nombre.replace(/^gasto\s+/i, '').trim();
+            return normalizarNombrePersona(nombre) || 'Sin nombre';
+        }
+
         function agregarGasto() {
             const concepto = normalizarNombrePersona(document.getElementById('gastoConcepto').value);
             const categoria = document.getElementById('gastoCategoria').value || 'Cena';
@@ -2614,7 +2623,7 @@
             
             const totalesPorPersona = {};
             gastos.forEach(g => {
-                const nombre = normalizarNombrePersona(g.concepto || 'Sin nombre') || 'Sin nombre';
+                const nombre = obtenerNombrePersonaGasto(g) || 'Sin nombre';
                 totalesPorPersona[nombre] = (totalesPorPersona[nombre] || 0) + Number(g.monto || 0);
             });
             const resumenPersonas = Object.entries(totalesPorPersona)
@@ -2730,19 +2739,22 @@
             }
 
             if (gastos.length > 0) {
-                const gastosConId = gastos.map(g => ({
-                    arqueo_id: arqueoData.id,
-                    concepto: normalizarNombrePersona(g.concepto),
-                    categoria: (g.categoria || 'Cena').trim() || 'Cena',
-                    monto: Number(g.monto || 0)
-                }));
+                const gastosConId = gastos.map(g => {
+                    const nombrePersona = normalizarNombrePersona(g.concepto);
+                    return {
+                        arqueo_id: arqueoData.id,
+                        concepto: nombrePersona,
+                        persona: nombrePersona,
+                        monto: Number(g.monto || 0)
+                    };
+                });
 
                 console.log('Guardando detalle de gastos por persona:', gastosConId);
 
                 const { data: gastosInsertados, error: errorGastos } = await db
                     .from('gastos')
                     .insert(gastosConId)
-                    .select('id, arqueo_id, concepto, categoria, monto');
+                    .select('id, arqueo_id, concepto, persona, monto');
 
                 if (errorGastos) {
                     showAlert('⚠️ El arqueo se guardó, pero NO se guardó el detalle por persona: ' + errorGastos.message, 'warning');
@@ -3018,12 +3030,11 @@
                 const arqueoIdsPeriodo = arqueosPeriodo.map(a => a.id).filter(Boolean);
                 gastosDetallePeriodo = [];
                 if (arqueoIdsPeriodo.length > 0) {
-                    const { data: gastosDetalleData, error: errorGastosDetalle } = await db
-                        .from('gastos')
-                        .select('arqueo_id, monto, concepto')
-                        .in('arqueo_id', arqueoIdsPeriodo);
+                    const { data: gastosDetalleData, error: errorGastosDetalle } = await buscarGastosPorArqueos(arqueoIdsPeriodo);
                     if (!errorGastosDetalle && gastosDetalleData) {
                         gastosDetallePeriodo = gastosDetalleData;
+                    } else if (errorGastosDetalle) {
+                        console.warn('No se pudo cargar detalle de gastos para dashboard:', errorGastosDetalle);
                     }
                 }
 
@@ -3525,8 +3536,8 @@
                         gastosConFecha.push({
                             arqueo_id: arqueo.id,
                             fecha: arqueo.fecha,
-                            categoria: g.categoria || 'Cena',
-                            concepto: g.concepto || 'Sin nombre',
+                            categoria: 'Cena',
+                            concepto: obtenerNombrePersonaGasto(g),
                             monto,
                             responsable: arqueo.responsable || '',
                             tipo: 'detalle'
@@ -3567,7 +3578,7 @@
                     const categoria = g.categoria || 'Otros';
                     const concepto = g.tipo === 'historico'
                         ? 'Pendiente de clasificar'
-                        : (normalizarNombrePersona(g.concepto || 'Sin nombre') || 'Sin nombre');
+                        : (obtenerNombrePersonaGasto(g) || 'Sin nombre');
                     porCategoria[categoria] = (porCategoria[categoria] || 0) + monto;
                     porConcepto[concepto] = (porConcepto[concepto] || 0) + monto;
                     return sum + monto;
@@ -3717,7 +3728,7 @@
                 const nombre = normalizarNombrePersona(row.querySelector('.division-nombre')?.value || '');
                 const monto = Number(row.querySelector('.division-monto')?.value || 0);
                 if (nombre && monto > 0) {
-                    lineas.push({ arqueo_id: arqueoId, concepto: nombre, categoria: 'Cena', monto });
+                    lineas.push({ arqueo_id: arqueoId, concepto: nombre, persona: nombre, monto });
                     total += monto;
                 }
             });
