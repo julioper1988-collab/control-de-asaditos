@@ -565,24 +565,26 @@
                     </div>
                 </div>
                 
-                <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">📝 Detalle de Gastos</h3>
+                <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">🍽️ Cenas / Consumos por Persona</h3>
+                <div style="color: var(--text-light); font-size: 0.9rem; margin: -0.5rem 0 1rem;">Anotá el nombre de la persona y el monto de su cena. Ejemplo: Javier 25000, Julio 30000, Adri 20000.</div>
                 <div id="listaGastos"></div>
                 
                 <!-- Formulario inline de gastos -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 0.75rem; align-items: end; background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
                     <div>
-                        <label class="form-label" style="font-size: 0.8rem;">Nombre / Concepto</label>
-                        <input type="text" id="gastoConcepto" class="form-input" placeholder="Ej: Javier, Chompi, Carbón..." onkeypress="if(event.key==='Enter') agregarGasto()">
+                        <label class="form-label" style="font-size: 0.8rem;">Nombre de la persona</label>
+                        <input type="text" id="gastoConcepto" class="form-input" placeholder="Ej: Javier, Julio, Adri..." list="listaPersonasCena" autocomplete="off" onkeypress="if(event.key==='Enter') agregarGasto()">
+                        <datalist id="listaPersonasCena">
+                            <option value="Javier">
+                            <option value="Julio">
+                            <option value="Adri">
+                        </datalist>
                     </div>
                     <div>
-                        <label class="form-label" style="font-size: 0.8rem;">Categoría</label>
+                        <label class="form-label" style="font-size: 0.8rem;">Tipo</label>
                         <select id="gastoCategoria" class="form-select">
-                            <option value="Insumos">Insumos</option>
-                            <option value="Packaging">Packaging</option>
-                            <option value="Gas/Combustible">Gas/Combustible</option>
-                            <option value="Personal">Personal</option>
-                            <option value="Limpieza">Limpieza</option>
-                            <option value="Transporte">Transporte</option>
+                            <option value="Cena" selected>Cena</option>
+                            <option value="Bebida">Bebida</option>
                             <option value="Otros">Otros</option>
                         </select>
                     </div>
@@ -770,7 +772,7 @@
                     </div>
                     <div style="margin-top: 0.75rem; display: grid; gap: 0.4rem; font-size: 0.9rem;">
                         <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
-                            <span style="color: var(--text-light);">Detalle cargado en Gastos Varios:</span>
+                            <span style="color: var(--text-light);">Detalle cargado por persona:</span>
                             <span id="totalGastosDetalladosPeriodo" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
                         </div>
                         <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
@@ -923,7 +925,7 @@
         <!-- TAB: GASTOS VARIOS -->
         <div id="tab-gastos" class="tab-content">
             <div class="card">
-                <div class="card-header">💸 Historial de Gastos Varios</div>
+                <div class="card-header">🍽️ Historial de Cenas / Gastos por Persona</div>
 
                 <div class="grid grid-2" style="margin-bottom: 1.5rem;">
                     <div class="form-group">
@@ -1537,7 +1539,7 @@
                             <table class="table">
                                 <thead>
                                     <tr>
-                                        <th>Concepto</th>
+                                        <th>Persona / Concepto</th>
                                         <th>Monto</th>
                                     </tr>
                                 </thead>
@@ -2524,12 +2526,22 @@
             return total;
         }
         
+        function normalizarNombrePersona(nombre) {
+            return (nombre || '')
+                .trim()
+                .replace(/\s+/g, ' ')
+                .toLowerCase()
+                .split(' ')
+                .map(parte => parte ? parte.charAt(0).toUpperCase() + parte.slice(1) : '')
+                .join(' ');
+        }
+
         function agregarGasto() {
-            const concepto = document.getElementById('gastoConcepto').value.trim();
-            const categoria = document.getElementById('gastoCategoria').value;
+            const concepto = normalizarNombrePersona(document.getElementById('gastoConcepto').value);
+            const categoria = document.getElementById('gastoCategoria').value || 'Cena';
             const monto = parseInt(document.getElementById('gastoMonto').value);
             
-            if (!concepto) { showAlert('⚠️ Ingresá el concepto del gasto', 'warning'); document.getElementById('gastoConcepto').focus(); return; }
+            if (!concepto) { showAlert('⚠️ Ingresá el nombre de la persona', 'warning'); document.getElementById('gastoConcepto').focus(); return; }
             if (!monto || monto <= 0) { showAlert('⚠️ Ingresá un monto válido', 'warning'); document.getElementById('gastoMonto').focus(); return; }
             
             gastos.push({ concepto, categoria, monto });
@@ -2551,8 +2563,24 @@
                 return;
             }
             
+            const totalesPorPersona = {};
+            gastos.forEach(g => {
+                const nombre = normalizarNombrePersona(g.concepto || 'Sin nombre') || 'Sin nombre';
+                totalesPorPersona[nombre] = (totalesPorPersona[nombre] || 0) + Number(g.monto || 0);
+            });
+            const resumenPersonas = Object.entries(totalesPorPersona)
+                .sort((a, b) => b[1] - a[1])
+                .map(([nombre, monto]) => `
+                    <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: 8px; padding: 0.75rem 1rem;">
+                        <div style="font-size: 0.85rem; color: var(--text-light);">${nombre}</div>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 800; color: var(--danger);">₲ ${Number(monto).toLocaleString()}</div>
+                    </div>
+                `).join('');
+
             container.innerHTML = `
                 <div style="background: var(--bg-main); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div style="font-weight: 700; margin-bottom: 0.75rem; color: var(--secondary);">Resumen de cena por persona</div>
+                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">${resumenPersonas}</div>
                     ${gastos.map((g, i) => `
                         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 6px; margin-bottom: 0.5rem;">
                             <div>
@@ -3409,7 +3437,7 @@
                 const totalGastosPeriodo = gastosConFecha.reduce((sum, g) => {
                     const monto = Number(g.monto || 0);
                     const categoria = g.categoria || 'Otros';
-                    const concepto = (g.concepto || 'Sin nombre').trim() || 'Sin nombre';
+                    const concepto = normalizarNombrePersona(g.concepto || 'Sin nombre') || 'Sin nombre';
                     porCategoria[categoria] = (porCategoria[categoria] || 0) + monto;
                     porConcepto[concepto] = (porConcepto[concepto] || 0) + monto;
                     return sum + monto;
@@ -3417,7 +3445,7 @@
 
                 resumenCatEl.innerHTML = `
                     <div style="background:var(--bg-main);padding:1.25rem;border-radius:8px;margin-bottom:1rem;">
-                        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;color:var(--secondary);">📊 Resumen por Categoría</div>
+                        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;color:var(--secondary);">🍽️ Resumen por Tipo</div>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;margin-bottom:1rem;">
                             ${Object.entries(porCategoria).sort((a,b)=>b[1]-a[1]).map(([categoria,monto]) => `
                                 <div style="background:var(--bg-card);padding:0.75rem 1rem;border-radius:6px;border-left:4px solid var(--danger);border:1px solid var(--border);">
@@ -3436,7 +3464,7 @@
 
                 resumenConceptoEl.innerHTML = `
                     <div style="background:var(--bg-main);padding:1.25rem;border-radius:8px;margin-bottom:1rem;">
-                        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;color:var(--secondary);">👤 Resumen por Nombre / Concepto</div>
+                        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;color:var(--secondary);">👤 Resumen por Persona</div>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;">
                             ${Object.entries(porConcepto).sort((a,b)=>b[1]-a[1]).map(([concepto,monto]) => `
                                 <div style="background:var(--bg-card);padding:0.75rem 1rem;border-radius:6px;border-left:4px solid var(--primary);border:1px solid var(--border);">
