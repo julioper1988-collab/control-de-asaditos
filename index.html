@@ -390,6 +390,44 @@
             .mobile-hint { display:block; margin-bottom:.85rem; padding:.8rem 1rem; border-radius:14px; background:rgba(255,107,53,.10); border:1px solid rgba(255,107,53,.25); color:var(--text-dark); font-size:.88rem; font-weight:600; }
         }
 
+        .mobile-section-bar { display:none; }
+        @media (max-width:768px) {
+            body { padding-bottom:22px; }
+            .nav-tabs { display:none !important; }
+            .mobile-section-bar {
+                display:block;
+                position:sticky;
+                top:68px;
+                z-index:260;
+                background:var(--bg-main);
+                padding:.7rem .75rem;
+                border-bottom:1px solid var(--border);
+                box-shadow:0 6px 18px rgba(0,0,0,.10);
+            }
+            .mobile-section-bar label {
+                display:block;
+                font-size:.76rem;
+                font-weight:800;
+                color:var(--text-light);
+                margin-bottom:.35rem;
+                text-transform:uppercase;
+                letter-spacing:.04em;
+            }
+            .mobile-section-select {
+                width:100%;
+                min-height:48px;
+                border:2px solid var(--primary);
+                border-radius:14px;
+                background:var(--bg-card);
+                color:var(--text-dark);
+                font-family:inherit;
+                font-weight:800;
+                font-size:16px;
+                padding:.72rem .85rem;
+            }
+            .mobile-hint { margin-top:.25rem; }
+        }
+
     </style>
 </head>
 <body>
@@ -408,9 +446,22 @@
         <button class="nav-tab" onclick="showTab(event, 'gastos')">💸 Gastos Varios</button>
     </div>
     
+    <div class="mobile-section-bar" aria-label="Selector de sección móvil">
+        <label for="mobileTabSelect">Ir a sección</label>
+        <select id="mobileTabSelect" class="mobile-section-select" onchange="showTab(this.value)">
+            <option value="carga">📝 Carga Diaria</option>
+            <option value="arqueo">💰 Arqueo de Caja</option>
+            <option value="inventario">📦 Inventario</option>
+            <option value="catalogo">📦 Catálogo</option>
+            <option value="dashboard">📊 Dashboard</option>
+            <option value="historial">📋 Historial</option>
+            <option value="gastos">💸 Gastos Varios</option>
+        </select>
+    </div>
+    
     <div class="container">
         <div id="alertContainer"></div>
-        <div id="mobileHint" class="mobile-hint">📱 Vista móvil activada: usá la barra inferior para cambiar de sección y cargá los datos en tarjetas más grandes.</div>
+        <div id="mobileHint" class="mobile-hint">📱 Vista móvil activada: usá el selector “Ir a sección” para entrar a cualquier pestaña sin que se esconda en la pantalla.</div>
         
         <div id="tab-carga" class="tab-content active">
             <div class="card">
@@ -1198,7 +1249,15 @@
             document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
 
-            if (triggerEl) triggerEl.classList.add('active');
+            const activeNavTab = document.querySelector(`.nav-tab[onclick*="'${tabName}'"]`);
+            if (triggerEl && triggerEl.classList && triggerEl.classList.contains('nav-tab')) {
+                triggerEl.classList.add('active');
+            } else if (activeNavTab) {
+                activeNavTab.classList.add('active');
+            }
+
+            const mobileSelect = document.getElementById('mobileTabSelect');
+            if (mobileSelect && mobileSelect.value !== tabName) mobileSelect.value = tabName;
 
             const tabContent = document.getElementById('tab-' + tabName);
             if (!tabContent) {
@@ -3259,137 +3318,177 @@
         async function cargarGastosVarios() {
             const desde = document.getElementById('gastosDesde').value;
             const hasta = document.getElementById('gastosHasta').value;
+            const listaEl = document.getElementById('listaGastosVarios');
+            const resumenCatEl = document.getElementById('resumenGastosPorCategoria');
+            const resumenConceptoEl = document.getElementById('resumenGastosPorConcepto');
 
             if (!desde || !hasta) {
                 showAlert('⚠️ Seleccioná un rango de fechas', 'warning');
                 return;
             }
 
-            // Obtener arqueos del período para conseguir sus IDs y fechas
-            const { data: arqueos } = await db
-                .from('arqueos')
-                .select('id, fecha')
-                .gte('fecha', desde)
-                .lte('fecha', hasta)
-                .order('fecha', { ascending: false });
+            listaEl.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">Cargando gastos...</p>';
+            resumenCatEl.innerHTML = '';
+            resumenConceptoEl.innerHTML = '';
 
-            if (!arqueos || arqueos.length === 0) {
-                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay arqueos registrados en este período</p>';
-                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
-                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
-                return;
-            }
+            try {
+                const { data: arqueos, error: errorArqueos } = await db
+                    .from('arqueos')
+                    .select('id, fecha, gastos, responsable')
+                    .gte('fecha', desde)
+                    .lte('fecha', hasta)
+                    .order('fecha', { ascending: false });
 
-            const arqueoIds = arqueos.map(a => a.id);
-            const arqueoFechaMap = {};
-            arqueos.forEach(a => arqueoFechaMap[a.id] = a.fecha);
+                if (errorArqueos) throw errorArqueos;
 
-            // Obtener todos los gastos de esos arqueos
-            const { data: gastosData } = await db
-                .from('gastos')
-                .select('*')
-                .in('arqueo_id', arqueoIds);
+                if (!arqueos || arqueos.length === 0) {
+                    listaEl.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">No hay arqueos registrados en este período</p>';
+                    return;
+                }
 
-            if (!gastosData || gastosData.length === 0) {
-                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
-                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
-                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
-                return;
-            }
+                const arqueoIds = arqueos.map(a => a.id);
+                const arqueosMap = {};
+                arqueos.forEach(a => arqueosMap[String(a.id)] = a);
 
-            // Agregar fecha a cada gasto y ordenar por fecha descendente
-            const gastosConFecha = gastosData
-                .map(g => ({ ...g, fecha: arqueoFechaMap[g.arqueo_id] }))
-                .filter(g => g.fecha) // descartar gastos sin fecha válida
-                .sort((a, b) => b.fecha.localeCompare(a.fecha));
+                const { data: gastosData, error: errorGastos } = await db
+                    .from('gastos')
+                    .select('id, arqueo_id, concepto, categoria, monto')
+                    .in('arqueo_id', arqueoIds);
 
-            if (gastosConFecha.length === 0) {
-                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
-                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
-                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
-                return;
-            }
+                if (errorGastos) {
+                    console.warn('No se pudo traer detalle de gastos. Se mostrará arqueos.gastos:', errorGastos);
+                }
 
-            // Totales por categoría
-            const porCategoria = {};
-            gastosConFecha.forEach(g => {
-                const key = g.categoria || 'Otros';
-                if (!porCategoria[key]) porCategoria[key] = 0;
-                porCategoria[key] += g.monto;
-            });
-            const totalGastosPeriodo = gastosConFecha.reduce((s, g) => s + g.monto, 0);
-            const porConcepto = {};
-            gastosConFecha.forEach(g => {
-                const key = (g.concepto || 'Sin nombre').trim() || 'Sin nombre';
-                if (!porConcepto[key]) porConcepto[key] = 0;
-                porConcepto[key] += g.monto;
-            });
+                const detallesPorArqueo = {};
+                const gastosConFecha = [];
 
-            // Render resumen por categoría
-            document.getElementById('resumenGastosPorCategoria').innerHTML = `
-                <div style="background: var(--bg-main); padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: var(--secondary);">📊 Resumen por Categoría</div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
-                        ${Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).map(([categoria, monto]) => `
-                            <div style="background: white; padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--danger);">
-                                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">💸 ${categoria}</div>
-                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.1rem;">₲ ${monto.toLocaleString()}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">${((monto / totalGastosPeriodo) * 100).toFixed(1)}% del total</div>
-                                <div style="background: var(--border); height: 4px; border-radius: 2px; margin-top: 0.5rem; overflow: hidden;">
-                                    <div style="width: ${((monto / totalGastosPeriodo) * 100).toFixed(1)}%; background: var(--danger); height: 100%;"></div>
+                if (!errorGastos && gastosData && gastosData.length > 0) {
+                    gastosData.forEach(g => {
+                        const arqueo = arqueosMap[String(g.arqueo_id)];
+                        if (!arqueo) return;
+                        const monto = Number(g.monto || 0);
+                        detallesPorArqueo[String(g.arqueo_id)] = (detallesPorArqueo[String(g.arqueo_id)] || 0) + monto;
+                        gastosConFecha.push({
+                            fecha: arqueo.fecha,
+                            categoria: g.categoria || 'Otros',
+                            concepto: g.concepto || 'Sin nombre',
+                            monto,
+                            responsable: arqueo.responsable || '',
+                            tipo: 'detalle'
+                        });
+                    });
+                }
+
+                // Si existen gastos guardados solo como total del arqueo, mostrarlos igual.
+                // Esto corrige la pestaña cuando no hay filas en la tabla gastos.
+                arqueos.forEach(a => {
+                    const totalArqueo = Number(a.gastos || 0);
+                    const totalDetalle = Number(detallesPorArqueo[String(a.id)] || 0);
+                    const sinDetalle = Math.max(0, totalArqueo - totalDetalle);
+                    if (sinDetalle > 0) {
+                        gastosConFecha.push({
+                            fecha: a.fecha,
+                            categoria: 'Sin detalle',
+                            concepto: 'Gastos históricos sin detalle',
+                            monto: sinDetalle,
+                            responsable: a.responsable || '',
+                            tipo: 'historico'
+                        });
+                    }
+                });
+
+                gastosConFecha.sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+                if (gastosConFecha.length === 0) {
+                    listaEl.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:2rem;">No hay gastos registrados en este período</p>';
+                    return;
+                }
+
+                const porCategoria = {};
+                const porConcepto = {};
+                const totalGastosPeriodo = gastosConFecha.reduce((sum, g) => {
+                    const monto = Number(g.monto || 0);
+                    const categoria = g.categoria || 'Otros';
+                    const concepto = (g.concepto || 'Sin nombre').trim() || 'Sin nombre';
+                    porCategoria[categoria] = (porCategoria[categoria] || 0) + monto;
+                    porConcepto[concepto] = (porConcepto[concepto] || 0) + monto;
+                    return sum + monto;
+                }, 0);
+
+                resumenCatEl.innerHTML = `
+                    <div style="background:var(--bg-main);padding:1.25rem;border-radius:8px;margin-bottom:1rem;">
+                        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;color:var(--secondary);">📊 Resumen por Categoría</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;margin-bottom:1rem;">
+                            ${Object.entries(porCategoria).sort((a,b)=>b[1]-a[1]).map(([categoria,monto]) => `
+                                <div style="background:var(--bg-card);padding:0.75rem 1rem;border-radius:6px;border-left:4px solid var(--danger);border:1px solid var(--border);">
+                                    <div style="font-size:0.85rem;color:var(--text-light);margin-bottom:0.25rem;">💸 ${categoria}</div>
+                                    <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger);font-size:1.1rem;">₲ ${Number(monto).toLocaleString()}</div>
+                                    <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.25rem;">${totalGastosPeriodo ? ((monto / totalGastosPeriodo) * 100).toFixed(1) : '0.0'}% del total</div>
                                 </div>
-                            </div>
-                        `).join('')}
+                            `).join('')}
+                        </div>
+                        <div style="padding:0.75rem 1rem;background:var(--bg-card);border-radius:6px;display:flex;justify-content:space-between;align-items:center;border-left:4px solid var(--secondary);border:1px solid var(--border);">
+                            <span style="font-weight:700;">Total de Gastos:</span>
+                            <span style="font-family:'JetBrains Mono',monospace;font-weight:800;font-size:1.25rem;color:var(--danger);">₲ ${totalGastosPeriodo.toLocaleString()}</span>
+                        </div>
                     </div>
-                    <div style="padding: 0.75rem 1rem; background: white; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--secondary);">
-                        <span style="font-weight: 700;">Total de Gastos Detallados:</span>
-                        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem; color: var(--danger);">₲ ${totalGastosPeriodo.toLocaleString()}</span>
-                    </div>
-                </div>
-            `;
+                `;
 
-            document.getElementById('resumenGastosPorConcepto').innerHTML = `
-                <div style="background: var(--bg-main); padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
-                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: var(--secondary);">👤 Resumen por Nombre / Concepto</div>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
-                        ${Object.entries(porConcepto).sort((a, b) => b[1] - a[1]).map(([concepto, monto]) => `
-                            <div style="background: white; padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--primary);">
-                                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">${concepto}</div>
-                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.1rem;">₲ ${monto.toLocaleString()}</div>
-                                <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">${((monto / totalGastosPeriodo) * 100).toFixed(1)}% del total detallado</div>
-                            </div>
-                        `).join('')}
+                resumenConceptoEl.innerHTML = `
+                    <div style="background:var(--bg-main);padding:1.25rem;border-radius:8px;margin-bottom:1rem;">
+                        <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;color:var(--secondary);">👤 Resumen por Nombre / Concepto</div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;">
+                            ${Object.entries(porConcepto).sort((a,b)=>b[1]-a[1]).map(([concepto,monto]) => `
+                                <div style="background:var(--bg-card);padding:0.75rem 1rem;border-radius:6px;border-left:4px solid var(--primary);border:1px solid var(--border);">
+                                    <div style="font-size:0.85rem;color:var(--text-light);margin-bottom:0.25rem;">${concepto}</div>
+                                    <div style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger);font-size:1.1rem;">₲ ${Number(monto).toLocaleString()}</div>
+                                    <div style="font-size:0.75rem;color:var(--text-light);margin-top:0.25rem;">${totalGastosPeriodo ? ((monto / totalGastosPeriodo) * 100).toFixed(1) : '0.0'}% del total</div>
+                                </div>
+                            `).join('')}
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
 
-            // Render tabla detallada
-            document.getElementById('listaGastosVarios').innerHTML = `
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Fecha</th>
-                            <th>Categoría</th>
-                            <th>Concepto</th>
-                            <th>Monto</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${gastosConFecha.map(g => `
-                            <tr>
-                                <td style="font-weight: 600;">${new Date(g.fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                                <td>${g.categoria || 'Otros'}</td>
-                                <td>${g.concepto}</td>
-                                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</td>
-                            </tr>
-                        `).join('')}
-                        <tr style="background: var(--bg-main); font-weight: 700;">
-                            <td colspan="3" style="text-align: right; padding-right: 1rem;">TOTAL DETALLADO:</td>
-                            <td style="font-family: 'JetBrains Mono', monospace; color: var(--danger); font-size: 1.1rem;">₲ ${totalGastosPeriodo.toLocaleString()}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            `;
+                listaEl.innerHTML = `
+                    <div class="table-wrap">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Categoría</th>
+                                    <th>Concepto</th>
+                                    <th>Responsable</th>
+                                    <th>Monto</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${gastosConFecha.map(g => `
+                                    <tr style="${g.tipo === 'historico' ? 'background:rgba(255,182,39,0.10);' : ''}">
+                                        <td style="font-weight:600;">${new Date(g.fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday:'short', day:'2-digit', month:'short', year:'numeric' })}</td>
+                                        <td>${g.categoria || 'Otros'}</td>
+                                        <td>${g.concepto}</td>
+                                        <td>${g.responsable || '-'}</td>
+                                        <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger);">₲ ${Number(g.monto || 0).toLocaleString()}</td>
+                                    </tr>
+                                `).join('')}
+                                <tr style="background:var(--bg-main);font-weight:700;">
+                                    <td colspan="4" style="text-align:right;padding-right:1rem;">TOTAL:</td>
+                                    <td style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-size:1.1rem;">₲ ${totalGastosPeriodo.toLocaleString()}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div style="margin-top:0.75rem;color:var(--text-light);font-size:0.85rem;">
+                        Nota: “Gastos históricos sin detalle” significa que ese arqueo tiene un total de gastos guardado, pero no tiene el detalle separado por nombre/categoría.
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error al cargar gastos varios:', error);
+                listaEl.innerHTML = '<p style="text-align:center;color:var(--danger);padding:2rem;">No se pudieron cargar los gastos. Revisá la consola para más detalles.</p>';
+                resumenCatEl.innerHTML = '';
+                resumenConceptoEl.innerHTML = '';
+                showAlert('❌ Error al cargar gastos varios: ' + (error?.message || error), 'danger');
+            }
         }
     </script>
 </body>
