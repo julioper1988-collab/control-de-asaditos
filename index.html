@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Asaditos - Sistema Completo</title>
+    <title>Control de Asaditos - Gastos por Persona</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
         
@@ -3465,7 +3465,7 @@
                 const bloque = idsLimpios.slice(i, i + tamanioBloque);
                 const { data, error } = await db
                     .from('gastos')
-                    .select('*')
+                    .select('id, arqueo_id, concepto, persona, monto, created_at')
                     .in('arqueo_id', bloque);
 
                 if (error) {
@@ -3545,24 +3545,27 @@
                     });
                 }
 
-                // Si existen gastos guardados solo como total del arqueo, mostrarlos igual.
-                // Esto corrige la pestaña cuando no hay filas en la tabla gastos.
+                // Si un arqueo NO tiene ninguna fila detallada en la tabla gastos,
+                // recién ahí mostramos el total como pendiente.
+                // Importante: no mezclamos los detalles ya existentes con "sin detalle"
+                // para que puedas ver claramente lo cargado por persona.
                 arqueos.forEach(a => {
                     const totalArqueo = Number(a.gastos || 0);
                     const totalDetalle = Number(detallesPorArqueo[String(a.id)] || 0);
-                    const sinDetalle = Math.max(0, totalArqueo - totalDetalle);
-                    if (sinDetalle > 0) {
+                    if (totalArqueo > 0 && totalDetalle === 0) {
                         gastosConFecha.push({
                             arqueo_id: a.id,
                             fecha: a.fecha,
                             categoria: 'Sin detalle',
                             concepto: 'Pendiente de clasificar por persona',
-                            monto: sinDetalle,
+                            monto: totalArqueo,
                             responsable: a.responsable || '',
                             tipo: 'historico'
                         });
                     }
                 });
+
+                console.log('GASTOS VARIOS - arqueos encontrados:', arqueos.length, 'detalles encontrados:', (gastosData || []).length, 'filas mostradas:', gastosConFecha.length);
 
                 gastosConFecha.sort((a, b) => b.fecha.localeCompare(a.fecha));
 
@@ -3604,6 +3607,7 @@
                 `;
 
                 resumenConceptoEl.innerHTML = `
+                    ${(!gastosData || gastosData.length === 0) ? '<div style="background:rgba(255,193,7,0.12);border-left:4px solid var(--accent);padding:0.9rem 1rem;border-radius:8px;margin-bottom:1rem;font-weight:700;">⚠️ No se encontraron filas detalladas en la tabla gastos para este rango. Si cargaste nombres, revisá que el rango de fechas incluya ese arqueo y que el detalle se haya guardado sin error.</div>' : ''}
                     <div style="background:var(--bg-main);padding:1.25rem;border-radius:8px;margin-bottom:1rem;">
                         <div style="font-weight:700;font-size:1.1rem;margin-bottom:1rem;color:var(--secondary);">👤 Resumen por Persona</div>
                         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:0.75rem;">
