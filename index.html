@@ -428,6 +428,12 @@
             .mobile-hint { margin-top:.25rem; }
         }
 
+
+        @media (max-width: 768px) {
+            .linea-division-gasto {
+                grid-template-columns: 1fr !important;
+            }
+        }
     </style>
 </head>
 <body>
@@ -958,6 +964,49 @@
             </div>
     </div>
     
+
+
+        <!-- Modal para dividir gastos históricos por persona -->
+        <div id="modalDividirGasto" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.55); z-index: 2500; display: flex; align-items: center; justify-content: center; padding: 1.5rem;">
+            <div style="background: var(--bg-card); color: var(--text-dark); border: 1px solid var(--border); border-radius: 14px; max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 1.5rem; box-shadow: 0 20px 60px rgba(0,0,0,0.35);">
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:1rem; margin-bottom:1rem;">
+                    <div>
+                        <h2 style="color: var(--secondary); font-size: 1.35rem; margin-bottom:0.25rem;">👤 Dividir gasto por persona</h2>
+                        <div id="modalDividirInfo" style="color: var(--text-light); font-size:0.9rem;"></div>
+                    </div>
+                    <button onclick="cerrarModalDividirGasto()" class="btn btn-secondary">❌ Cerrar</button>
+                </div>
+
+                <input type="hidden" id="dividirArqueoId">
+                <input type="hidden" id="dividirMontoTotal">
+
+                <div id="lineasDivisionGasto" style="display:grid; gap:0.75rem; margin:1rem 0;"></div>
+
+                <div style="display:flex; gap:0.75rem; flex-wrap:wrap; margin-bottom:1rem;">
+                    <button onclick="agregarLineaDivisionGasto()" class="btn btn-primary">➕ Agregar persona</button>
+                    <button onclick="guardarDivisionGastoHistorico()" class="btn btn-success">💾 Guardar división</button>
+                </div>
+
+                <div style="background: var(--bg-main); border:1px solid var(--border); padding:1rem; border-radius:8px;">
+                    <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                        <span style="font-weight:700;">Total a dividir:</span>
+                        <span id="divisionTotalObjetivo" style="font-family:'JetBrains Mono',monospace;font-weight:800;color:var(--danger);">₲ 0</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:0.5rem;">
+                        <span style="font-weight:700;">Total cargado:</span>
+                        <span id="divisionTotalCargado" style="font-family:'JetBrains Mono',monospace;font-weight:800;">₲ 0</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap;">
+                        <span style="font-weight:700;">Falta / sobra:</span>
+                        <span id="divisionDiferencia" style="font-family:'JetBrains Mono',monospace;font-weight:800;">₲ 0</span>
+                    </div>
+                    <div style="margin-top:0.75rem;color:var(--text-light);font-size:0.85rem;">
+                        Usá esto para los gastos antiguos que aparecen como “sin detalle”. Después de guardar, ya van a aparecer en el resumen por persona.
+                    </div>
+                </div>
+            </div>
+        </div>
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
         const SUPABASE_URL = 'https://sdpysvowvwucjfnyosuf.supabase.co';
@@ -2610,7 +2659,16 @@
             const fecha = document.getElementById('arqueoFecha').value;
             const responsable = document.getElementById('arqueoResponsable').value;
             if (!fecha || !responsable) { showAlert('⚠️ Completa todos los campos', 'warning'); return; }
-            
+
+            // Asegurar que los gastos en memoria tengan nombre/tipo/monto correctos antes de guardar.
+            gastos = (gastos || [])
+                .map(g => ({
+                    concepto: normalizarNombrePersona(g.concepto || ''),
+                    categoria: (g.categoria || 'Cena').trim() || 'Cena',
+                    monto: Number(g.monto || 0)
+                }))
+                .filter(g => g.concepto && g.monto > 0);
+
             // Validar que existan ventas para este día
             const { data: ventasDelDia } = await db.from('ventas').select('id').eq('fecha', fecha).limit(1);
             if (!ventasDelDia || ventasDelDia.length === 0) {
@@ -2622,15 +2680,15 @@
                 `);
                 if (!igualContinuar) return;
             }
-            
-            const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
+
+            const totalGastos = gastos.reduce((sum, g) => sum + Number(g.monto || 0), 0);
             const efectivo = calcularTotalEfectivo();
             const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
             const transferencias = parseInt(document.getElementById('transferencias').value) || 0;
             const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
             const monchis = parseInt(document.getElementById('monchis').value) || 0;
             const pos = parseInt(document.getElementById('pos').value) || 0;
-            
+
             const arqueo = {
                 fecha, responsable, efectivo,
                 sencillo_inicio: sencillo,
@@ -2641,35 +2699,75 @@
                 gastos: totalGastos,
                 diferencia: (efectivo + transferencias + pedidosYa + monchis + pos + totalGastos) - (ventaDelDiaActual + sencillo)
             };
-            
+
             const { error } = await db.from('arqueos').upsert(arqueo, { onConflict: 'fecha' });
             if (error) { showAlert('❌ Error al guardar arqueo: ' + error.message, 'danger'); return; }
-            
-            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
-            
-            if (arqueoData) {
-                // Guardar gastos: primero eliminar los anteriores, luego insertar
-                await db.from('gastos').delete().eq('arqueo_id', arqueoData.id);
-                
-                if (gastos.length > 0) {
-                    const gastosConId = gastos.map(g => ({
-                        arqueo_id: arqueoData.id,
-                        concepto: g.concepto,
-                        categoria: g.categoria || 'Otros',
-                        monto: g.monto
-                    }));
-                    const { error: errorGastos } = await db.from('gastos').insert(gastosConId);
-                    if (errorGastos) {
-                        showAlert('⚠️ Arqueo guardado pero hubo un error con los gastos: ' + errorGastos.message, 'warning');
-                        return;
-                    }
-                }
+
+            const { data: arqueoData, error: errorLeerArqueo } = await db
+                .from('arqueos')
+                .select('id')
+                .eq('fecha', fecha)
+                .maybeSingle();
+
+            if (errorLeerArqueo || !arqueoData) {
+                showAlert('⚠️ Se guardó el arqueo, pero no se pudo recuperar el ID para guardar el detalle por persona.', 'warning');
+                console.error('Error leyendo arqueo guardado:', errorLeerArqueo);
+                return;
             }
-            
-            showAlert('✅ Arqueo guardado correctamente', 'success');
+
+            // IMPORTANTE:
+            // Si fallan los detalles en la tabla "gastos", NO limpiamos el formulario.
+            // Así no queda guardado solamente el total como "Sin especificar".
+            const { error: errorBorrarGastos } = await db
+                .from('gastos')
+                .delete()
+                .eq('arqueo_id', arqueoData.id);
+
+            if (errorBorrarGastos) {
+                showAlert('⚠️ El arqueo se guardó, pero no se pudieron borrar/actualizar los gastos anteriores: ' + errorBorrarGastos.message, 'warning');
+                console.error('Error borrando gastos anteriores:', errorBorrarGastos);
+                return;
+            }
+
+            if (gastos.length > 0) {
+                const gastosConId = gastos.map(g => ({
+                    arqueo_id: arqueoData.id,
+                    concepto: normalizarNombrePersona(g.concepto),
+                    categoria: (g.categoria || 'Cena').trim() || 'Cena',
+                    monto: Number(g.monto || 0)
+                }));
+
+                console.log('Guardando detalle de gastos por persona:', gastosConId);
+
+                const { data: gastosInsertados, error: errorGastos } = await db
+                    .from('gastos')
+                    .insert(gastosConId)
+                    .select('id, arqueo_id, concepto, categoria, monto');
+
+                if (errorGastos) {
+                    showAlert('⚠️ El arqueo se guardó, pero NO se guardó el detalle por persona: ' + errorGastos.message, 'warning');
+                    console.error('Error insertando gastos por persona:', errorGastos, gastosConId);
+                    return;
+                }
+
+                if (!gastosInsertados || gastosInsertados.length !== gastosConId.length) {
+                    showAlert('⚠️ El arqueo se guardó, pero el detalle por persona no se confirmó completo. Revisá la consola.', 'warning');
+                    console.warn('Gastos esperados:', gastosConId, 'Gastos insertados:', gastosInsertados);
+                    return;
+                }
+
+                console.log('Detalle de gastos guardado correctamente:', gastosInsertados);
+            }
+
+            showAlert('✅ Arqueo y detalle por persona guardados correctamente', 'success');
             limpiarFormularioArqueo();
+
+            // Actualizar la pestaña de Gastos/Cenas si está abierta.
+            if (document.getElementById('tab-gastos')?.classList.contains('active')) {
+                cargarGastosVarios();
+            }
         }
-        
+
         function limpiarFormularioArqueo() {
             const fechaArqueo = document.getElementById('arqueoFecha').value;
             limpiarArqueoDraft(fechaArqueo); // Limpiar borrador local
@@ -3343,6 +3441,37 @@
         }
 
         // ===== GASTOS VARIOS =====
+
+        async function buscarGastosPorArqueos(arqueoIds) {
+            // Supabase/PostgREST a veces falla con listas IN muy largas.
+            // Por eso buscamos en bloques pequeños y unimos los resultados.
+            const todos = [];
+            const errores = [];
+            const idsLimpios = (arqueoIds || []).filter(id => id !== null && id !== undefined && id !== '');
+            const tamanioBloque = 10;
+
+            for (let i = 0; i < idsLimpios.length; i += tamanioBloque) {
+                const bloque = idsLimpios.slice(i, i + tamanioBloque);
+                const { data, error } = await db
+                    .from('gastos')
+                    .select('*')
+                    .in('arqueo_id', bloque);
+
+                if (error) {
+                    console.warn('Error buscando gastos del bloque:', bloque, error);
+                    errores.push(error);
+                    continue;
+                }
+
+                if (data && data.length > 0) todos.push(...data);
+            }
+
+            return {
+                data: todos,
+                error: errores.length > 0 ? errores[0] : null
+            };
+        }
+
         async function cargarGastosVarios() {
             const desde = document.getElementById('gastosDesde').value;
             const hasta = document.getElementById('gastosHasta').value;
@@ -3378,10 +3507,7 @@
                 const arqueosMap = {};
                 arqueos.forEach(a => arqueosMap[String(a.id)] = a);
 
-                const { data: gastosData, error: errorGastos } = await db
-                    .from('gastos')
-                    .select('id, arqueo_id, concepto, categoria, monto')
-                    .in('arqueo_id', arqueoIds);
+                const { data: gastosData, error: errorGastos } = await buscarGastosPorArqueos(arqueoIds);
 
                 if (errorGastos) {
                     console.warn('No se pudo traer detalle de gastos. Se mostrará arqueos.gastos:', errorGastos);
@@ -3397,8 +3523,9 @@
                         const monto = Number(g.monto || 0);
                         detallesPorArqueo[String(g.arqueo_id)] = (detallesPorArqueo[String(g.arqueo_id)] || 0) + monto;
                         gastosConFecha.push({
+                            arqueo_id: arqueo.id,
                             fecha: arqueo.fecha,
-                            categoria: g.categoria || 'Otros',
+                            categoria: g.categoria || 'Cena',
                             concepto: g.concepto || 'Sin nombre',
                             monto,
                             responsable: arqueo.responsable || '',
@@ -3415,9 +3542,10 @@
                     const sinDetalle = Math.max(0, totalArqueo - totalDetalle);
                     if (sinDetalle > 0) {
                         gastosConFecha.push({
+                            arqueo_id: a.id,
                             fecha: a.fecha,
                             categoria: 'Sin detalle',
-                            concepto: 'Gastos históricos sin detalle',
+                            concepto: 'Pendiente de clasificar por persona',
                             monto: sinDetalle,
                             responsable: a.responsable || '',
                             tipo: 'historico'
@@ -3437,7 +3565,9 @@
                 const totalGastosPeriodo = gastosConFecha.reduce((sum, g) => {
                     const monto = Number(g.monto || 0);
                     const categoria = g.categoria || 'Otros';
-                    const concepto = normalizarNombrePersona(g.concepto || 'Sin nombre') || 'Sin nombre';
+                    const concepto = g.tipo === 'historico'
+                        ? 'Pendiente de clasificar'
+                        : (normalizarNombrePersona(g.concepto || 'Sin nombre') || 'Sin nombre');
                     porCategoria[categoria] = (porCategoria[categoria] || 0) + monto;
                     porConcepto[concepto] = (porConcepto[concepto] || 0) + monto;
                     return sum + monto;
@@ -3487,6 +3617,7 @@
                                     <th>Concepto</th>
                                     <th>Responsable</th>
                                     <th>Monto</th>
+                                    <th>Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -3497,17 +3628,20 @@
                                         <td>${g.concepto}</td>
                                         <td>${g.responsable || '-'}</td>
                                         <td style="font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--danger);">₲ ${Number(g.monto || 0).toLocaleString()}</td>
+                                        <td>
+                                            ${g.tipo === 'historico' ? `<button onclick="abrirModalDividirGasto('${g.arqueo_id}', '${g.fecha}', ${Number(g.monto || 0)})" class="btn btn-primary" style="padding:0.45rem 0.75rem;font-size:0.85rem;white-space:nowrap;">✏️ Dividir</button>` : '✅ Detallado'}
+                                        </td>
                                     </tr>
                                 `).join('')}
                                 <tr style="background:var(--bg-main);font-weight:700;">
-                                    <td colspan="4" style="text-align:right;padding-right:1rem;">TOTAL:</td>
+                                    <td colspan="5" style="text-align:right;padding-right:1rem;">TOTAL:</td>
                                     <td style="font-family:'JetBrains Mono',monospace;color:var(--danger);font-size:1.1rem;">₲ ${totalGastosPeriodo.toLocaleString()}</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                     <div style="margin-top:0.75rem;color:var(--text-light);font-size:0.85rem;">
-                        Nota: “Gastos históricos sin detalle” significa que ese arqueo tiene un total de gastos guardado, pero no tiene el detalle separado por nombre/categoría.
+                        Nota: el resumen por persona se calcula desde los nombres cargados en el detalle del arqueo. Si aparece “Pendiente de clasificar”, ese arqueo tiene total de gastos pero no se pudo leer el detalle por nombre.
                     </div>
                 `;
             } catch (error) {
@@ -3518,6 +3652,95 @@
                 showAlert('❌ Error al cargar gastos varios: ' + (error?.message || error), 'danger');
             }
         }
+
+
+        // ===== DIVIDIR GASTOS HISTÓRICOS POR PERSONA =====
+        function abrirModalDividirGasto(arqueoId, fecha, montoTotal) {
+            const modal = document.getElementById('modalDividirGasto');
+            document.getElementById('dividirArqueoId').value = arqueoId;
+            document.getElementById('dividirMontoTotal').value = Number(montoTotal || 0);
+            const fechaFmt = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday:'long', day:'2-digit', month:'long', year:'numeric' });
+            document.getElementById('modalDividirInfo').textContent = `${fechaFmt} · Total pendiente: ₲ ${Number(montoTotal || 0).toLocaleString()}`;
+            document.getElementById('divisionTotalObjetivo').textContent = `₲ ${Number(montoTotal || 0).toLocaleString()}`;
+            document.getElementById('lineasDivisionGasto').innerHTML = '';
+            agregarLineaDivisionGasto('', Number(montoTotal || 0));
+            actualizarTotalesDivisionGasto();
+            modal.classList.remove('hidden');
+        }
+
+        function cerrarModalDividirGasto() {
+            document.getElementById('modalDividirGasto').classList.add('hidden');
+        }
+
+        function agregarLineaDivisionGasto(nombre = '', monto = '') {
+            const cont = document.getElementById('lineasDivisionGasto');
+            const id = Date.now() + '_' + Math.floor(Math.random() * 10000);
+            const div = document.createElement('div');
+            div.className = 'linea-division-gasto';
+            div.style.cssText = 'display:grid;grid-template-columns:1.4fr 1fr auto;gap:0.75rem;align-items:end;background:var(--bg-main);border:1px solid var(--border);padding:0.9rem;border-radius:8px;';
+            div.innerHTML = `
+                <div>
+                    <label class="form-label" style="font-size:0.8rem;">Persona</label>
+                    <input type="text" class="form-input division-nombre" list="listaPersonasCena" placeholder="Ej: Javier" value="${nombre || ''}" autocomplete="off">
+                </div>
+                <div>
+                    <label class="form-label" style="font-size:0.8rem;">Monto</label>
+                    <input type="number" class="form-input division-monto" placeholder="0" value="${monto || ''}" oninput="actualizarTotalesDivisionGasto()">
+                </div>
+                <button onclick="this.closest('.linea-division-gasto').remove(); actualizarTotalesDivisionGasto();" class="btn btn-danger" style="height:44px;">🗑️</button>
+            `;
+            cont.appendChild(div);
+            div.querySelector('.division-nombre').focus();
+            actualizarTotalesDivisionGasto();
+        }
+
+        function actualizarTotalesDivisionGasto() {
+            const objetivo = Number(document.getElementById('dividirMontoTotal').value || 0);
+            let cargado = 0;
+            document.querySelectorAll('#lineasDivisionGasto .division-monto').forEach(input => {
+                cargado += Number(input.value || 0);
+            });
+            const diferencia = cargado - objetivo;
+            document.getElementById('divisionTotalCargado').textContent = `₲ ${cargado.toLocaleString()}`;
+            const difEl = document.getElementById('divisionDiferencia');
+            difEl.textContent = `₲ ${diferencia.toLocaleString()}`;
+            difEl.style.color = diferencia === 0 ? 'var(--success)' : 'var(--danger)';
+        }
+
+        async function guardarDivisionGastoHistorico() {
+            const arqueoId = document.getElementById('dividirArqueoId').value;
+            const objetivo = Number(document.getElementById('dividirMontoTotal').value || 0);
+            const lineas = [];
+            let total = 0;
+
+            document.querySelectorAll('#lineasDivisionGasto .linea-division-gasto').forEach(row => {
+                const nombre = normalizarNombrePersona(row.querySelector('.division-nombre')?.value || '');
+                const monto = Number(row.querySelector('.division-monto')?.value || 0);
+                if (nombre && monto > 0) {
+                    lineas.push({ arqueo_id: arqueoId, concepto: nombre, categoria: 'Cena', monto });
+                    total += monto;
+                }
+            });
+
+            if (!arqueoId) { showAlert('❌ No se encontró el arqueo a dividir', 'danger'); return; }
+            if (lineas.length === 0) { showAlert('⚠️ Cargá al menos una persona con monto', 'warning'); return; }
+            if (total !== objetivo) {
+                showAlert(`⚠️ La división debe sumar exactamente ₲ ${objetivo.toLocaleString()}. Ahora suma ₲ ${total.toLocaleString()}.`, 'warning');
+                return;
+            }
+
+            const { error } = await db.from('gastos').insert(lineas);
+            if (error) {
+                showAlert('❌ No se pudo guardar la división: ' + error.message, 'danger');
+                return;
+            }
+
+            cerrarModalDividirGasto();
+            showAlert('✅ Gasto dividido por persona correctamente', 'success');
+            await cargarGastosVarios();
+            await cargarDashboard();
+        }
+
     </script>
 </body>
 </html>
