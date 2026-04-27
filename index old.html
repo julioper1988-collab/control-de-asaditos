@@ -1,0 +1,3312 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Asaditos - Sistema Completo</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E85A2A;
+            --secondary: #2D3142;
+            --accent: #FFB627;
+            --bg-main: #F8F9FA;
+            --bg-card: #FFFFFF;
+            --text-dark: #1A1A1A;
+            --text-light: #6C757D;
+            --border: #E9ECEF;
+            --success: #28A745;
+            --danger: #DC3545;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+        }
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, var(--secondary) 0%, #1a1e2e 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        .nav-tabs {
+            display: flex;
+            gap: 0.5rem;
+            padding: 1.5rem 2rem 0;
+            background: var(--bg-main);
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+        
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: none;
+            color: var(--text-light);
+            font-weight: 600;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+            font-size: 0.95rem;
+        }
+        
+        .nav-tab:hover {
+            color: var(--primary);
+            background: rgba(255, 107, 53, 0.05);
+        }
+        
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--secondary);
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 2px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+        
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+        
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+        
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+        
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: inherit;
+        }
+        
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #1a1e2e;
+        }
+        
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #218838;
+        }
+        
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .table thead {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .table th,
+        .table td {
+            padding: 1rem;
+            text-align: left;
+        }
+        
+        .table tbody tr {
+            border-bottom: 1px solid var(--border);
+        }
+        
+        .table tbody tr:hover {
+            background: rgba(255, 107, 53, 0.05);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .product-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr;
+            gap: 0.75rem;
+            padding: 1rem;
+            background: var(--bg-main);
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            align-items: center;
+        }
+        
+        .product-name {
+            font-weight: 600;
+            color: var(--secondary);
+        }
+        
+        .denomination-row {
+            display: grid;
+            grid-template-columns: 150px 1fr 150px;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.75rem;
+        }
+        
+        .denomination-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .denomination-total {
+            text-align: right;
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            font-weight: 600;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border-left: 4px solid var(--success);
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border-left: 4px solid var(--danger);
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            color: #856404;
+            border-left: 4px solid var(--accent);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 768px) {
+            .container { padding: 1rem; }
+            .product-row { grid-template-columns: 1fr; }
+            .denomination-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1><span style="font-size: 2rem;">🔥</span> Control de Asaditos</h1>
+    </div>
+    
+    <div class="nav-tabs">
+        <button class="nav-tab active" onclick="showTab(event, 'carga')">📝 Carga Diaria</button>
+        <button class="nav-tab" onclick="showTab(event, 'arqueo')">💰 Arqueo de Caja</button>
+        <button class="nav-tab" onclick="showTab(event, 'inventario')">📦 Inventario</button>
+        <button class="nav-tab" onclick="showTab(event, 'catalogo')">📦 Catálogo</button>
+        <button class="nav-tab" onclick="showTab(event, 'dashboard')">📊 Dashboard</button>
+        <button class="nav-tab" onclick="showTab(event, 'historial')">📋 Historial</button>
+        <button class="nav-tab" onclick="showTab(event, 'gastos')">💸 Gastos Varios</button>
+    </div>
+    
+    <div class="container">
+        <div id="alertContainer"></div>
+        
+        <div id="tab-carga" class="tab-content active">
+            <div class="card">
+                <div class="card-header">📝 Registro de Ventas Diarias</div>
+                
+                <div class="form-group">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" id="ventaFecha" class="form-input" onchange="cargarDatosVenta()">
+                </div>
+                
+                <div id="alertSobrantes" class="hidden"></div>
+                
+                <div id="productosVenta"></div>
+                
+                <button onclick="guardarVentas()" class="btn btn-success">💾 Guardar Ventas del Día</button>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">📋 Resumen del Día</div>
+                <div class="grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Vendido</div>
+                        <div class="stat-value" id="totalVendidoDia">0</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%);">
+                        <div class="stat-label">Ganancia Estimada</div>
+                        <div class="stat-value" id="gananciaEstimadaDia">₲ 0</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--accent) 0%, #e09e1c 100%);">
+                        <div class="stat-label">Ingreso Total</div>
+                        <div class="stat-value" id="ingresoTotalDia">₲ 0</div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, var(--danger) 0%, #a71d2a 100%);">
+                        <div class="stat-label">🔧 Averiados del Día</div>
+                        <div class="stat-value" id="averiadosTotalDia">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tab-arqueo" class="tab-content">
+            <div class="card">
+                <div class="card-header">💵 Conteo de Efectivo</div>
+                
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Fecha del Arqueo</label>
+                        <input type="date" id="arqueoFecha" class="form-input" onchange="cargarVentaDelDia()">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Responsable</label>
+                        <input type="text" id="arqueoResponsable" class="form-input" value="Julio" list="listaResponsables" autocomplete="off">
+                        <datalist id="listaResponsables">
+                            <option value="Julio">
+                            <option value="Empleado 1">
+                            <option value="Empleado 2">
+                        </datalist>
+                    </div>
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">Billetes</h3>
+                <div id="billetes"></div>
+                
+                <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">Monedas</h3>
+                <div id="monedas"></div>
+                
+                <div style="background: var(--bg-main); padding: 1.5rem; border-radius: 8px; margin-top: 1.5rem;">
+                    <h3 style="font-size: 1.25rem; margin-bottom: 1rem;">Total en Caja</h3>
+                    <div style="font-size: 2rem; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace;" id="totalEfectivo">₲ 0</div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">📋 Rendición del Día</div>
+                
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Sencillo de Inicio</label>
+                        <input type="number" id="sencilloInicio" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'sencilloInicio')">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Transferencias</label>
+                        <input type="number" id="transferencias" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'transferencias')">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Pedidos Ya</label>
+                        <input type="number" id="pedidosYa" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pedidosYa')">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Monchis</label>
+                        <input type="number" id="monchis" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'monchis')">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">POS / Tarjeta</label>
+                        <input type="number" id="pos" class="form-input" value="0" oninput="calcularRendicion()" onchange="calcularRendicion()" onkeypress="handleEnterArqueo(event, 'pos')">
+                    </div>
+                </div>
+                
+                <h3 style="margin: 1.5rem 0 1rem; font-size: 1.1rem; color: var(--secondary);">📝 Detalle de Gastos</h3>
+                <div id="listaGastos"></div>
+                
+                <!-- Formulario inline de gastos -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 0.75rem; align-items: end; background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem;">Nombre / Concepto</label>
+                        <input type="text" id="gastoConcepto" class="form-input" placeholder="Ej: Javier, Chompi, Carbón..." onkeypress="if(event.key==='Enter') agregarGasto()">
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem;">Categoría</label>
+                        <select id="gastoCategoria" class="form-select">
+                            <option value="Insumos">Insumos</option>
+                            <option value="Packaging">Packaging</option>
+                            <option value="Gas/Combustible">Gas/Combustible</option>
+                            <option value="Personal">Personal</option>
+                            <option value="Limpieza">Limpieza</option>
+                            <option value="Transporte">Transporte</option>
+                            <option value="Otros">Otros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" style="font-size: 0.8rem;">Monto (₲)</label>
+                        <input type="number" id="gastoMonto" class="form-input" placeholder="0" onkeypress="if(event.key==='Enter') agregarGasto()">
+                    </div>
+                    <button onclick="agregarGasto()" class="btn btn-primary" style="height: 44px;">➕ Agregar</button>
+                </div>
+                
+                <div style="background: var(--bg-main); padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 700; font-size: 1.1rem;">Total Gastos:</span>
+                        <span id="totalGastos" style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem; color: var(--danger);">₲ 0</span>
+                    </div>
+                </div>
+                
+                <div style="background: var(--bg-main); padding: 1.5rem; border-radius: 8px; margin-top: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-weight: 600;">Venta del Día:</span>
+                        <span id="ventaDelDia" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-weight: 600;">Debe Tener:</span>
+                        <span id="debeTener" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="font-weight: 600;">Total Tiene:</span>
+                        <span id="totalTiene" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                    </div>
+                    <hr style="margin: 1rem 0; border: none; border-top: 2px solid var(--border);">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="font-weight: 700; font-size: 1.1rem;">Diferencia:</span>
+                        <span id="diferencia" style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem;">₲ 0</span>
+                    </div>
+                </div>
+                
+                <button onclick="guardarArqueo()" class="btn btn-success" style="margin-top: 1.5rem;">💾 Guardar Arqueo</button>
+            </div>
+        </div>
+        
+        <div id="tab-inventario" class="tab-content">
+            <div class="card">
+                <div class="card-header">📦 Inventario Actual (Stock Disponible)</div>
+                
+                <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                    <button onclick="filtrarInventario('todos')" class="btn btn-secondary" id="btnTodos">📦 Todos</button>
+                    <button onclick="filtrarInventario('conStock')" class="btn btn-success" id="btnConStock">🟢 Con Stock</button>
+                    <button onclick="filtrarInventario('sinStock')" class="btn btn-danger" id="btnSinStock">🔴 Sin Stock</button>
+                </div>
+                
+                <div id="listaInventario"></div>
+                
+                <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="font-weight: 700; font-size: 1.1rem;">Valor Total del Inventario:</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.5rem; color: var(--primary);" id="valorTotalInventario">₲ 0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tab-catalogo" class="tab-content">
+            <div class="card">
+                <div class="card-header">📦 Administrar Productos</div>
+                
+                <button onclick="mostrarFormProducto()" class="btn btn-primary" style="margin-bottom: 1.5rem;">➕ Nuevo Producto</button>
+                
+                <div id="formProducto" class="hidden" style="background: var(--bg-main); padding: 1.5rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <h3 style="margin-bottom: 1rem;">Agregar/Editar Producto</h3>
+                    <input type="hidden" id="productoId">
+                    
+                    <div class="grid grid-2">
+                        <div class="form-group">
+                            <label class="form-label">Nombre del Producto</label>
+                            <input type="text" id="productoNombre" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Categoría</label>
+                            <select id="productoCategoria" class="form-select">
+                                <option value="ASADITO">Asadito</option>
+                                <option value="EMBUTIDO">Embutido</option>
+                                <option value="PARRILLA">Parrilla</option>
+                                <option value="BEBIDA">Bebida</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Precio de Venta (₲)</label>
+                            <input type="number" id="productoPrecio" class="form-input">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Costo Unitario (₲)</label>
+                            <input type="number" id="productoCosto" class="form-input">
+                        </div>
+                    </div>
+                    
+                    <div style="display: flex; gap: 1rem;">
+                        <button onclick="guardarProducto()" class="btn btn-success">💾 Guardar</button>
+                        <button onclick="cancelarProducto()" class="btn btn-secondary">❌ Cancelar</button>
+                    </div>
+                </div>
+                
+                <div id="listaProductos"></div>
+            </div>
+        </div>
+        
+        <div id="tab-dashboard" class="tab-content">
+            <!-- Filtro de Fechas -->
+            <div class="card">
+                <div style="display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+                    <div class="form-group" style="margin: 0; min-width: 200px;">
+                        <label class="form-label">Desde</label>
+                        <input type="date" id="dashboardDesde" class="form-input">
+                    </div>
+                    <div class="form-group" style="margin: 0; min-width: 200px;">
+                        <label class="form-label">Hasta</label>
+                        <input type="date" id="dashboardHasta" class="form-input">
+                    </div>
+                    <button onclick="cargarDashboard()" class="btn btn-primary" style="margin-top: 1.75rem;">🔍 Actualizar</button>
+                    <button onclick="rangoMesActual()" class="btn btn-secondary" style="margin-top: 1.75rem;">📅 Mes Actual</button>
+                    <button onclick="rangoUltimos7Dias()" class="btn btn-secondary" style="margin-top: 1.75rem;">📆 Últimos 7 días</button>
+                    <button onclick="rangoUltimos30Dias()" class="btn btn-secondary" style="margin-top: 1.75rem;">📊 Últimos 30 días</button>
+                </div>
+            </div>
+            
+            <!-- Alertas de control -->
+            <div id="alertasDashboard"></div>
+            
+            <!-- Estadísticas Principales -->
+            <div class="grid grid-3">
+                <div class="stat-card">
+                    <div class="stat-label">Venta Total del Período</div>
+                    <div class="stat-value" id="ventaMes">₲ 0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="ventaMesComparacion"></div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--success) 0%, #1e7e34 100%);">
+                    <div class="stat-label">Ganancia del Período</div>
+                    <div class="stat-value" id="gananciaMes">₲ 0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="margenMes"></div>
+                </div>
+                <div class="stat-card" style="background: linear-gradient(135deg, var(--accent) 0%, #e09e1c 100%);">
+                    <div class="stat-label">Promedio Diario</div>
+                    <div class="stat-value" id="promedioDiario">₲ 0</div>
+                    <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 0.5rem;" id="diasTrabajados"></div>
+                </div>
+            </div>
+            
+            <!-- Métodos de Pago -->
+            <div class="card">
+                <div class="card-header">💳 Análisis por Método de Pago</div>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">💵 Efectivo</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace;" id="totalEfectivoPagos">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajeEfectivo">0%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🔄 Transferencias</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: #17a2b8; font-family: 'JetBrains Mono', monospace;" id="totalTransferenciasPagos">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajeTransferencias">0%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">💳 POS/Tarjeta</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace;" id="totalPOS">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajePOS">0%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🛵 Pedidos Ya</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: var(--accent); font-family: 'JetBrains Mono', monospace;" id="totalPedidosYa">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajePedidosYa">0%</div>
+                    </div>
+                    <div style="text-align: center; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🍔 Monchis</div>
+                        <div style="font-size: 1.75rem; font-weight: 800; color: #e67e22; font-family: 'JetBrains Mono', monospace;" id="totalMonchis">₲ 0</div>
+                        <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.5rem;" id="porcentajeMonchis">0%</div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <span style="font-weight: 600;">Total Gastos del Período:</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.25rem;" id="totalGastosPeriodo">₲ 0</span>
+                    </div>
+                    <div style="margin-top: 0.75rem; display: grid; gap: 0.4rem; font-size: 0.9rem;">
+                        <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                            <span style="color: var(--text-light);">Detalle cargado en Gastos Varios:</span>
+                            <span id="totalGastosDetalladosPeriodo" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                            <span style="color: var(--text-light);">Gastos históricos sin detalle:</span>
+                            <span id="totalGastosHistoricosPeriodo" style="font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ 0</span>
+                        </div>
+                        <div id="notaGastosHistoricosDashboard" style="font-size: 0.8rem; color: var(--text-light);"></div>
+                    </div>
+                </div>
+
+                <div id="resumenGastosPorNombreDashboard" style="margin-top: 1rem; background: var(--bg-main); padding: 1.25rem; border-radius: 8px;">
+                    <div style="font-weight: 700; font-size: 1.05rem; margin-bottom: 1rem; color: var(--secondary);">👤 Gastos por Nombre / Concepto</div>
+                    <div id="listaGastosPorNombreDashboard" style="color: var(--text-light);">Todavía no hay gastos detallados para este período.</div>
+                </div>
+            </div>
+            
+            <!-- Estadísticas Secundarias -->
+            <div class="grid grid-3">
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: 600; color: var(--text-light);">Mejor Día</span>
+                        <span style="font-size: 0.85rem; color: var(--text-light);" id="mejorDiaFecha"></span>
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: var(--success); font-family: 'JetBrains Mono', monospace;" id="mejorDia">₲ 0</div>
+                </div>
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: 600; color: var(--text-light);">Peor Día</span>
+                        <span style="font-size: 0.85rem; color: var(--text-light);" id="peorDiaFecha"></span>
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: var(--danger); font-family: 'JetBrains Mono', monospace;" id="peorDia">₲ 0</div>
+                </div>
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                        <span style="font-weight: 600; color: var(--text-light);">Unidades Vendidas</span>
+                        <span style="font-size: 0.85rem; color: var(--text-light);">Este mes</span>
+                    </div>
+                    <div style="font-size: 1.75rem; font-weight: 800; color: var(--primary); font-family: 'JetBrains Mono', monospace;" id="totalUnidades">0</div>
+                </div>
+            </div>
+            
+            <!-- Eficiencia y Desperdicios -->
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">📈 Eficiencia de Producción</div>
+                    <div style="display: flex; justify-content: space-around; margin-top: 1rem; flex-wrap: wrap; gap: 1rem;">
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Producción Total</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;" id="totalProduccion">0</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Vendidos</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--success); font-family: 'JetBrains Mono', monospace;" id="totalVendidos">0</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Sobrantes</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace;" id="totalSobrantes">0</div>
+                        </div>
+                        <div style="text-align: center;">
+                            <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">🔧 Averiados</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger); font-family: 'JetBrains Mono', monospace;" id="totalAveriadosDash">0</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 1.5rem; padding: 1rem; background: var(--bg-main); border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem; color: var(--text-light); margin-bottom: 0.5rem;">Eficiencia (vendidos/producción)</div>
+                        <div style="font-size: 2rem; font-weight: 800; color: var(--primary);" id="eficiencia">0%</div>
+                    </div>
+                    <div style="margin-top: 0.75rem; padding: 1rem; background: #fff3cd; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 0.9rem; color: #856404; margin-bottom: 0.5rem;">Pérdida por Averiados</div>
+                        <div style="font-size: 1.5rem; font-weight: 800; color: var(--danger); font-family: 'JetBrains Mono', monospace;" id="perdidaAveriados">₲ 0</div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">💰 Análisis Financiero</div>
+                    <div style="margin-top: 1rem;">
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-main); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <span style="font-weight: 600;">Ingresos Totales:</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700;" id="ingresosTotal">₲ 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-main); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <span style="font-weight: 600;">Costos Totales:</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);" id="costosTotal">₲ 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-main); border-radius: 6px; margin-bottom: 0.5rem;">
+                            <span style="font-weight: 600;">Ganancia Neta:</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--success);" id="gananciaTotal">₲ 0</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 0.75rem; background: var(--bg-main); border-radius: 6px;">
+                            <span style="font-weight: 600;">Margen de Ganancia:</span>
+                            <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary);" id="margenGanancia">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Top Productos -->
+            <div class="card">
+                <div class="card-header">🏆 Top 10 Productos del Mes</div>
+                <div id="topProductos"></div>
+            </div>
+            
+            <!-- Análisis por Categoría -->
+            <div class="card">
+                <div class="card-header">📊 Ventas por Categoría</div>
+                <div id="ventasPorCategoria"></div>
+            </div>
+            
+            <!-- Ventas por Día de la Semana -->
+            <div class="card">
+                <div class="card-header">📅 Rendimiento por Día de la Semana</div>
+                <div id="ventasPorDiaSemana"></div>
+            </div>
+            
+            <!-- Productos con Más Sobrantes -->
+            <div class="card">
+                <div class="card-header">⚠️ Productos con Más Desperdicio</div>
+                <div id="productosSobrantes"></div>
+            </div>
+            
+            <!-- Historial de Ventas Diarias (Últimos 30 días) -->
+            <div class="card">
+                <div class="card-header">📈 Historial de Ventas (Últimos 30 días)</div>
+                <div id="historialVentas"></div>
+            </div>
+        </div>
+        
+        <div id="tab-historial" class="tab-content">
+            <div class="card">
+                <div class="card-header">📋 Historial Completo</div>
+                
+                <div class="grid grid-2" style="margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Fecha Desde</label>
+                        <input type="date" id="historialDesde" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha Hasta</label>
+                        <input type="date" id="historialHasta" class="form-input">
+                    </div>
+                </div>
+                
+                <button onclick="cargarHistorial()" class="btn btn-primary" style="margin-bottom: 1.5rem;">🔍 Buscar</button>
+                
+                <div id="listaHistorial"></div>
+            </div>
+            
+        </div>
+
+        <!-- TAB: GASTOS VARIOS -->
+        <div id="tab-gastos" class="tab-content">
+            <div class="card">
+                <div class="card-header">💸 Historial de Gastos Varios</div>
+
+                <div class="grid grid-2" style="margin-bottom: 1.5rem;">
+                    <div class="form-group">
+                        <label class="form-label">Fecha Desde</label>
+                        <input type="date" id="gastosDesde" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Fecha Hasta</label>
+                        <input type="date" id="gastosHasta" class="form-input">
+                    </div>
+                </div>
+
+                <button onclick="cargarGastosVarios()" class="btn btn-primary" style="margin-bottom: 1.5rem;">🔍 Buscar</button>
+
+                <div id="resumenGastosPorCategoria" style="margin-bottom: 1rem;"></div>
+                <div id="resumenGastosPorConcepto" style="margin-bottom: 1.5rem;"></div>
+                <div id="listaGastosVarios"></div>
+            </div>
+        </div>
+
+            <!-- Modal de detalle -->
+            <div id="modalDetalle" class="hidden" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 2rem;">
+                <div style="background: white; border-radius: 12px; max-width: 900px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                        <h2 style="color: var(--secondary); font-size: 1.5rem;" id="modalTitulo">Detalle del Día</h2>
+                        <button onclick="cerrarModal()" class="btn btn-secondary">❌ Cerrar</button>
+                    </div>
+                    <div id="modalContenido"></div>
+                </div>
+            </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = 'https://sdpysvowvwucjfnyosuf.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNkcHlzdm93dnd1Y2pmbnlvc3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzEyNjMxNjUsImV4cCI6MjA4NjgzOTE2NX0.-03XyWwC2X0V4Dp4dtCq5oxcvYInBMGRccZSAq5nDQ8';
+        
+        let db;
+        let productos = [];
+        let ventaDelDiaActual = 0;
+        let gastos = [];
+        let suspendArqueoDraft = false;
+        
+        const BILLETES = [100000, 50000, 20000, 10000, 5000, 2000];
+        const MONEDAS = [1000, 500, 100];
+
+        function fechaLocalISO(date = new Date()) {
+            const y = date.getFullYear();
+            const m = String(date.getMonth() + 1).padStart(2, '0');
+            const d = String(date.getDate()).padStart(2, '0');
+            return `${y}-${m}-${d}`;
+        }
+
+
+        function formatearFechaConDia(fechaISO, incluirAnho = false) {
+            const opciones = incluirAnho
+                ? { weekday: 'long', year: 'numeric', month: 'long', day: '2-digit' }
+                : { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' };
+            return new Date(fechaISO + 'T00:00:00').toLocaleDateString('es-PY', opciones);
+        }
+        
+        window.onload = async function() {
+            try {
+                if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+                    throw new Error('No se pudo cargar la librería de Supabase');
+                }
+
+                const { createClient } = window.supabase;
+                db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+                await cargarProductos();
+                await renderProductosVenta();
+                renderDenominaciones();
+                renderGastos();
+
+            const today = fechaLocalISO();
+            const ventaFechaInput = document.getElementById('ventaFecha');
+            ventaFechaInput.value = today;
+            ventaFechaInput.setAttribute('data-fecha-cargada', today);
+
+            document.getElementById('arqueoFecha').value = today;
+
+            // Establecer rango del historial (último mes)
+            const hace30dias = new Date();
+            hace30dias.setDate(hace30dias.getDate() - 30);
+            document.getElementById('historialDesde').value = fechaLocalISO(hace30dias);
+            document.getElementById('historialHasta').value = today;
+
+            // Establecer rango del dashboard (mes actual)
+            const primerDiaMesActual = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+            const ultimoDiaMesActual = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0);
+            document.getElementById('dashboardDesde').value = fechaLocalISO(primerDiaMesActual);
+            document.getElementById('dashboardHasta').value = fechaLocalISO(ultimoDiaMesActual);
+
+            // Establecer rango para gastos varios (último mes)
+            document.getElementById('gastosDesde').value = fechaLocalISO(hace30dias);
+            document.getElementById('gastosHasta').value = today;
+
+            // Restaurar borrador de arqueo si existe (ANTES de cargar de DB)
+            const restauradoArqueo = restaurarArqueoDraft(today);
+            if (restauradoArqueo) {
+                setTimeout(() => showAlert('💾 Se restauró un borrador del arqueo no guardado', 'warning'), 1500);
+            }
+
+            // Cargar datos de venta (sobrantes del día anterior si aplica)
+            await cargarDatosVenta();
+
+            // Verificar si hay días recientes sin datos
+            await verificarUltimoDiaRegistrado();
+
+            showAlert('✅ Sistema conectado correctamente', 'success');
+            } catch (error) {
+                console.error('Error al iniciar la aplicación:', error);
+                showAlert('❌ Error al iniciar la aplicación: ' + (error?.message || error), 'danger');
+            }
+        };
+        
+        async function verificarUltimoDiaRegistrado() {
+            const { data } = await db.from('ventas').select('fecha').order('fecha', { ascending: false }).limit(1);
+            if (!data || data.length === 0) return;
+            
+            const ultimaFecha = data[0].fecha;
+            const hoy = fechaLocalISO();
+            const ayer = fechaLocalISO(new Date(Date.now() - 86400000));
+            
+            if (ultimaFecha < ayer && ultimaFecha !== hoy) {
+                const diasSinDatos = Math.floor((new Date(hoy) - new Date(ultimaFecha)) / 86400000);
+                const fechaFmt = new Date(ultimaFecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'long', day: '2-digit', month: 'long' });
+                if (diasSinDatos >= 1) {
+                    setTimeout(() => showAlert(`⚠️ Último registro: ${fechaFmt} (hace ${diasSinDatos} día${diasSinDatos > 1 ? 's' : ''}). ¿Falta cargar ventas?`, 'warning'), 1500);
+                }
+            }
+        }
+
+        // ===== PERSISTENCIA LOCAL (localStorage) — evita pérdida de datos en refresh =====
+
+        function guardarVentasDraft() {
+            const fecha = document.getElementById('ventaFecha').value;
+            if (!fecha || productos.length === 0) return;
+            const datos = {};
+            productos.forEach(p => {
+                const prodHoy = document.getElementById(`prod_hoy_${p.id}`);
+                const aver = document.getElementById(`aver_${p.id}`);
+                const sobr = document.getElementById(`sobr_${p.id}`);
+                const sobAnt = document.getElementById(`sobrant_ant_${p.id}`);
+                if (prodHoy) {
+                    datos[p.id] = {
+                        prod_hoy: prodHoy.value || 0,
+                        aver: aver ? (aver.value || 0) : 0,
+                        sobr: sobr ? (sobr.value || 0) : 0,
+                        sobrant_ant: sobAnt ? (sobAnt.value || 0) : 0
+                    };
+                }
+            });
+            try { localStorage.setItem(`asaditos_ventas_draft_${fecha}`, JSON.stringify(datos)); } catch(e) {}
+        }
+
+        function restaurarVentasDraft(fecha, opciones = {}) {
+            try {
+                const guardado = localStorage.getItem(`asaditos_ventas_draft_${fecha}`);
+                if (!guardado) return false;
+                const datos = JSON.parse(guardado);
+                const restaurarSobranteAnterior = opciones.restaurarSobranteAnterior !== false;
+                let restaurado = false;
+                productos.forEach(p => {
+                    if (datos[p.id]) {
+                        const prodHoyInput = document.getElementById(`prod_hoy_${p.id}`);
+                        const averInput = document.getElementById(`aver_${p.id}`);
+                        const sobrInput = document.getElementById(`sobr_${p.id}`);
+                        const sobAntInput = document.getElementById(`sobrant_ant_${p.id}`);
+                        if (prodHoyInput) {
+                            if (sobAntInput && restaurarSobranteAnterior) { sobAntInput.removeAttribute('readonly'); sobAntInput.value = datos[p.id].sobrant_ant || 0; sobAntInput.setAttribute('readonly', true); }
+                            prodHoyInput.value = datos[p.id].prod_hoy || 0;
+                            if (averInput) averInput.value = datos[p.id].aver || 0;
+                            if (sobrInput) sobrInput.value = datos[p.id].sobr || 0;
+                            calcularProduccionTotal(p.id);
+                            restaurado = true;
+                        }
+                    }
+                });
+                if (restaurado) calcularResumen();
+                return restaurado;
+            } catch(e) { return false; }
+        }
+
+        function limpiarVentasDraft(fecha) {
+            try { localStorage.removeItem(`asaditos_ventas_draft_${fecha}`); } catch(e) {}
+        }
+
+        function guardarArqueoDraft() {
+            if (suspendArqueoDraft) return;
+            const fecha = document.getElementById('arqueoFecha').value;
+            if (!fecha) return;
+            const datos = {
+                responsable: document.getElementById('arqueoResponsable').value,
+                sencilloInicio: document.getElementById('sencilloInicio').value,
+                transferencias: document.getElementById('transferencias').value,
+                pedidosYa: document.getElementById('pedidosYa').value,
+                monchis: document.getElementById('monchis').value,
+                pos: document.getElementById('pos').value,
+                billetes: {},
+                monedas: {},
+                gastos: JSON.parse(JSON.stringify(gastos))
+            };
+            BILLETES.forEach(d => {
+                const el = document.getElementById(`bil_${d}`);
+                if (el) datos.billetes[d] = el.value || 0;
+            });
+            MONEDAS.forEach(d => {
+                const el = document.getElementById(`mon_${d}`);
+                if (el) datos.monedas[d] = el.value || 0;
+            });
+            try { localStorage.setItem(`asaditos_arqueo_draft_${fecha}`, JSON.stringify(datos)); } catch(e) {}
+        }
+
+        function restaurarArqueoDraft(fecha) {
+            try {
+                const guardado = localStorage.getItem(`asaditos_arqueo_draft_${fecha}`);
+                if (!guardado) return false;
+                const datos = JSON.parse(guardado);
+                if (datos.responsable) document.getElementById('arqueoResponsable').value = datos.responsable;
+                if (datos.sencilloInicio) document.getElementById('sencilloInicio').value = datos.sencilloInicio;
+                if (datos.transferencias) document.getElementById('transferencias').value = datos.transferencias;
+                if (datos.pedidosYa) document.getElementById('pedidosYa').value = datos.pedidosYa;
+                if (datos.monchis) document.getElementById('monchis').value = datos.monchis;
+                if (datos.pos) document.getElementById('pos').value = datos.pos;
+                if (datos.billetes) {
+                    BILLETES.forEach(d => {
+                        const el = document.getElementById(`bil_${d}`);
+                        if (el && datos.billetes[d] != null) el.value = datos.billetes[d];
+                    });
+                }
+                if (datos.monedas) {
+                    MONEDAS.forEach(d => {
+                        const el = document.getElementById(`mon_${d}`);
+                        if (el && datos.monedas[d] != null) el.value = datos.monedas[d];
+                    });
+                }
+                if (datos.gastos && Array.isArray(datos.gastos)) {
+                    gastos = datos.gastos;
+                    renderGastos();
+                }
+                calcularArqueo();
+                return true;
+            } catch(e) { return false; }
+        }
+
+        function limpiarArqueoDraft(fecha) {
+            try { localStorage.removeItem(`asaditos_arqueo_draft_${fecha}`); } catch(e) {}
+        }
+
+        // ===== MODAL DE CONFIRMACIÓN REUTILIZABLE =====
+        function mostrarModalConfirmacion(htmlContenido) {
+            return new Promise((resolve) => {
+                // Crear overlay
+                const overlay = document.createElement('div');
+                overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);z-index:2000;display:flex;align-items:center;justify-content:center;padding:1.5rem;';
+                
+                const modal = document.createElement('div');
+                modal.style.cssText = 'background:white;border-radius:14px;max-width:520px;width:100%;padding:2rem;box-shadow:0 20px 60px rgba(0,0,0,0.25);';
+                modal.innerHTML = `
+                    ${htmlContenido}
+                    <div style="display:flex;gap:1rem;margin-top:1.5rem;">
+                        <button id="modalConfirmar" class="btn btn-success" style="flex:1;font-size:1rem;">✅ Confirmar y Guardar</button>
+                        <button id="modalCancelar" class="btn btn-secondary" style="flex:1;font-size:1rem;">❌ Cancelar</button>
+                    </div>
+                `;
+                
+                overlay.appendChild(modal);
+                document.body.appendChild(overlay);
+                
+                modal.querySelector('#modalConfirmar').onclick = () => { document.body.removeChild(overlay); resolve(true); };
+                modal.querySelector('#modalCancelar').onclick = () => { document.body.removeChild(overlay); resolve(false); };
+                overlay.onclick = (e) => { if (e.target === overlay) { document.body.removeChild(overlay); resolve(false); } };
+            });
+        }
+
+        function showAlert(message, type = 'success') {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            document.getElementById('alertContainer').appendChild(alert);
+            setTimeout(() => alert.remove(), 5000);
+        }
+        
+        function showTab(eventOrTabName, maybeTabName) {
+            const tabName = typeof eventOrTabName === 'string' ? eventOrTabName : maybeTabName;
+            const triggerEl = typeof eventOrTabName === 'string'
+                ? document.querySelector(`.nav-tab[onclick*="'${tabName}'"]`)
+                : (eventOrTabName?.currentTarget || eventOrTabName?.target);
+
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            if (triggerEl) triggerEl.classList.add('active');
+
+            const tabContent = document.getElementById('tab-' + tabName);
+            if (!tabContent) {
+                showAlert('⚠️ No se encontró la pestaña solicitada: ' + tabName, 'warning');
+                return;
+            }
+            tabContent.classList.add('active');
+
+            if (tabName === 'dashboard') cargarDashboard();
+            else if (tabName === 'catalogo') cargarListaProductos();
+            else if (tabName === 'arqueo') cargarVentaDelDia();
+            else if (tabName === 'historial') cargarHistorial();
+            else if (tabName === 'inventario') cargarInventario();
+            else if (tabName === 'gastos') {
+                // Auto-set date range to last 60 days if not already set
+                const desdeEl = document.getElementById('gastosDesde');
+                const hastaEl = document.getElementById('gastosHasta');
+                if (!desdeEl.value || !hastaEl.value) {
+                    const hoy = new Date();
+                    const hace60 = new Date();
+                    hace60.setDate(hoy.getDate() - 60);
+                    hastaEl.value = fechaLocalISO(hoy);
+                    desdeEl.value = fechaLocalISO(hace60);
+                }
+                cargarGastosVarios();
+            }
+        }
+        
+        async function cargarHistorial() {
+            const desde = document.getElementById('historialDesde').value;
+            const hasta = document.getElementById('historialHasta').value;
+            
+            if (!desde || !hasta) {
+                showAlert('⚠️ Selecciona un rango de fechas', 'warning');
+                return;
+            }
+            
+            // Obtener ventas
+            const { data: ventas } = await db
+                .from('ventas')
+                .select('*')
+                .gte('fecha', desde)
+                .lte('fecha', hasta)
+                .order('fecha', { ascending: false });
+            
+            // Obtener arqueos
+            const { data: arqueos } = await db
+                .from('arqueos')
+                .select('*')
+                .gte('fecha', desde)
+                .lte('fecha', hasta)
+                .order('fecha', { ascending: false });
+            
+            // Agrupar ventas por fecha
+            const ventasPorFecha = {};
+            if (ventas) {
+                ventas.forEach(v => {
+                    if (!ventasPorFecha[v.fecha]) {
+                        ventasPorFecha[v.fecha] = {
+                            ventas: [],
+                            ingreso: 0,
+                            ganancia: 0,
+                            unidades: 0
+                        };
+                    }
+                    ventasPorFecha[v.fecha].ventas.push(v);
+                    ventasPorFecha[v.fecha].ingreso += v.ingreso;
+                    ventasPorFecha[v.fecha].ganancia += v.ganancia;
+                    ventasPorFecha[v.fecha].unidades += v.vendidos;
+                });
+            }
+            
+            // Crear mapa de arqueos
+            const arqueosMap = {};
+            if (arqueos) {
+                arqueos.forEach(a => {
+                    arqueosMap[a.fecha] = a;
+                });
+            }
+            
+            // Obtener todas las fechas únicas
+            const todasFechas = [...new Set([...Object.keys(ventasPorFecha), ...Object.keys(arqueosMap)])].sort().reverse();
+            
+            if (todasFechas.length === 0) {
+                document.getElementById('listaHistorial').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos en este rango</p>';
+                return;
+            }
+            
+            const html = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Ingresos</th>
+                            <th>Ganancia</th>
+                            <th>Unidades</th>
+                            <th>Arqueo</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${todasFechas.map(fecha => {
+                            const venta = ventasPorFecha[fecha];
+                            const arqueo = arqueosMap[fecha];
+                            const tieneVenta = !!venta;
+                            const tieneArqueo = !!arqueo;
+                            
+                            return `
+                                <tr style="background: ${tieneVenta && !tieneArqueo ? '#fff3cd' : 'white'};">
+                                    <td style="font-weight: 600;">${formatearFechaConDia(fecha)}</td>
+                                    <td>${tieneVenta ? '₲ ' + venta.ingreso.toLocaleString() : '-'}</td>
+                                    <td style="color: var(--success); font-weight: 600;">${tieneVenta ? '₲ ' + venta.ganancia.toLocaleString() : '-'}</td>
+                                    <td>${tieneVenta ? venta.unidades : '-'}</td>
+                                    <td>
+                                        ${tieneArqueo ? '✅ Completado' : (tieneVenta ? '<span style="color: var(--danger); font-weight: 600;">❌ Faltante</span>' : '-')}
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; gap: 0.5rem;">
+                                            ${tieneVenta || tieneArqueo ? `
+                                                <button onclick="verDetalle('${fecha}')" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">👁️ Ver</button>
+                                                ${tieneVenta ? `<button onclick="editarVentas('${fecha}')" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">✏️ Editar</button>` : ''}
+                                                <button onclick="eliminarDia('${fecha}')" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;">🗑️ Eliminar</button>
+                                            ` : '-'}
+                                        </div>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('listaHistorial').innerHTML = html;
+        }
+        
+        async function verDetalle(fecha) {
+            const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            document.getElementById('modalTitulo').textContent = `Detalle del ${fechaFormateada}`;
+            
+            // Obtener ventas del día
+            const { data: ventas } = await db
+                .from('ventas')
+                .select('*')
+                .eq('fecha', fecha);
+            
+            // Obtener arqueo del día
+            const { data: arqueo } = await db
+                .from('arqueos')
+                .select('*')
+                .eq('fecha', fecha)
+                .maybeSingle();
+            
+            // Obtener gastos si hay arqueo
+            let gastos = [];
+            if (arqueo) {
+                const { data: gastosData } = await db
+                    .from('gastos')
+                    .select('*')
+                    .eq('arqueo_id', arqueo.id);
+                if (gastosData) gastos = gastosData;
+            }
+            
+            let html = '';
+            
+            // Sección de Ventas
+            if (ventas && ventas.length > 0) {
+                const totalIngreso = ventas.reduce((sum, v) => sum + v.ingreso, 0);
+                const totalGanancia = ventas.reduce((sum, v) => sum + v.ganancia, 0);
+                
+                html += `
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--secondary); margin-bottom: 1rem;">📝 Ventas del Día</h3>
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Producto</th>
+                                    <th>Producción</th>
+                                    <th>Sobrante</th>
+                                    <th>Vendidos</th>
+                                    <th>Precio</th>
+                                    <th>Ingreso</th>
+                                    <th>Ganancia</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${ventas.map(v => {
+                                    const producto = productos.find(p => p.id === v.producto_id);
+                                    return `
+                                        <tr>
+                                            <td style="font-weight: 600;">${producto ? producto.nombre : 'Producto #' + v.producto_id}</td>
+                                            <td>${v.produccion}</td>
+                                            <td>${v.sobrante}</td>
+                                            <td style="font-weight: 600; color: var(--primary);">${v.vendidos}</td>
+                                            <td>₲ ${v.precio_venta.toLocaleString()}</td>
+                                            <td>₲ ${v.ingreso.toLocaleString()}</td>
+                                            <td style="color: var(--success); font-weight: 600;">₲ ${v.ganancia.toLocaleString()}</td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                                <tr style="background: var(--bg-main); font-weight: 700;">
+                                    <td colspan="5">TOTALES</td>
+                                    <td>₲ ${totalIngreso.toLocaleString()}</td>
+                                    <td style="color: var(--success);">₲ ${totalGanancia.toLocaleString()}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Sección de Arqueo
+            if (arqueo) {
+                const totalTiene = arqueo.efectivo + arqueo.pedidos_ya + (arqueo.monchis || 0) + arqueo.pos + arqueo.gastos;
+                const debeTener = ventas ? ventas.reduce((sum, v) => sum + v.ingreso, 0) + arqueo.sencillo_inicio : arqueo.sencillo_inicio;
+                
+                html += `
+                    <div style="margin-bottom: 2rem;">
+                        <h3 style="color: var(--secondary); margin-bottom: 1rem;">💰 Arqueo de Caja</h3>
+                        <div style="background: var(--bg-main); padding: 1.5rem; border-radius: 8px;">
+                            <div class="grid grid-2">
+                                <div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Responsable:</span>
+                                        <span style="margin-left: 0.5rem;">${arqueo.responsable}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Efectivo en Caja:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.efectivo.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Pedidos Ya:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.pedidos_ya.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">🍔 Monchis:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${(arqueo.monchis || 0).toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">POS:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.pos.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Sencillo Inicio:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace;">₲ ${arqueo.sencillo_inicio.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Gastos:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; color: var(--danger);">₲ ${arqueo.gastos.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Total Tiene:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700;">₲ ${totalTiene.toLocaleString()}</span>
+                                    </div>
+                                    <div style="margin-bottom: 1rem;">
+                                        <span style="font-weight: 600;">Diferencia:</span>
+                                        <span style="margin-left: 0.5rem; font-family: 'JetBrains Mono', monospace; font-weight: 700; color: ${arqueo.diferencia >= 0 ? 'var(--success)' : 'var(--danger)'};">₲ ${arqueo.diferencia.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Gastos
+                if (gastos.length > 0) {
+                    html += `
+                        <div>
+                            <h3 style="color: var(--secondary); margin-bottom: 1rem;">📝 Detalle de Gastos</h3>
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Concepto</th>
+                                        <th>Monto</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${gastos.map(g => `
+                                        <tr>
+                                            <td style="font-weight: 600;">${g.concepto}</td>
+                                            <td style="color: var(--danger); font-weight: 600;">₲ ${g.monto.toLocaleString()}</td>
+                                        </tr>
+                                    `).join('')}
+                                    <tr style="background: var(--bg-main); font-weight: 700;">
+                                        <td>TOTAL</td>
+                                        <td style="color: var(--danger);">₲ ${gastos.reduce((sum, g) => sum + g.monto, 0).toLocaleString()}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            } else if (ventas && ventas.length > 0) {
+                html += `
+                    <div class="alert alert-danger">
+                        ⚠️ Este día tiene ventas registradas pero NO tiene arqueo de caja guardado.
+                    </div>
+                `;
+            }
+            
+            document.getElementById('modalContenido').innerHTML = html;
+            document.getElementById('modalDetalle').classList.remove('hidden');
+        }
+        
+        function cerrarModal() {
+            document.getElementById('modalDetalle').classList.add('hidden');
+        }
+        
+        async function eliminarDia(fecha) {
+            const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            // Confirmar con el usuario
+            const confirmacion = confirm(
+                `⚠️ ADVERTENCIA CRÍTICA\n\n` +
+                `Estás a punto de ELIMINAR PERMANENTEMENTE todos los datos del ${fechaFormateada}:\n\n` +
+                `• Todas las ventas del día\n` +
+                `• El arqueo de caja\n` +
+                `• Todos los gastos registrados\n\n` +
+                `Esta acción NO se puede deshacer.\n\n` +
+                `¿Estás completamente seguro de eliminar TODOS los datos de este día?`
+            );
+            
+            if (!confirmacion) return;
+            
+            // Confirmación adicional para estar seguros
+            const confirmacionFinal = confirm(
+                `⚠️ ÚLTIMA CONFIRMACIÓN\n\n` +
+                `¿REALMENTE deseas eliminar todos los datos del ${fechaFormateada}?\n\n` +
+                `Esta es tu última oportunidad para cancelar.`
+            );
+            
+            if (!confirmacionFinal) return;
+            
+            try {
+                // 1. Obtener el arqueo (para eliminar gastos vinculados)
+                const { data: arqueo } = await db
+                    .from('arqueos')
+                    .select('id')
+                    .eq('fecha', fecha)
+                    .maybeSingle();
+                
+                // 2. Eliminar gastos si hay arqueo
+                if (arqueo) {
+                    await db.from('gastos').delete().eq('arqueo_id', arqueo.id);
+                }
+                
+                // 3. Eliminar arqueo
+                await db.from('arqueos').delete().eq('fecha', fecha);
+                
+                // 4. Eliminar ventas
+                await db.from('ventas').delete().eq('fecha', fecha);
+                
+                showAlert(`✅ Todos los datos del ${fechaFormateada} han sido eliminados`, 'success');
+                
+                // Recargar el historial
+                await cargarHistorial();
+                
+            } catch (error) {
+                showAlert('❌ Error al eliminar: ' + error.message, 'danger');
+                console.error('Error eliminando día:', error);
+            }
+        }
+        
+        async function editarVentas(fecha) {
+            const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            const accion = confirm(
+                `EDITAR VENTAS DEL ${fechaFormateada}\n\n` +
+                `¿Qué deseas hacer?\n\n` +
+                `• OK = Editar cantidades (modificar datos del mismo día)\n` +
+                `• CANCELAR = Cambiar la fecha de esta venta a otro día`
+            );
+            
+            if (accion) {
+                // Opción 1: Editar en el mismo día
+                // Cambiar a la pestaña de Carga Diaria
+                const tabCarga = document.querySelector('.nav-tab:first-child');
+                tabCarga.click();
+                
+                // Cambiar la fecha
+                const inputFecha = document.getElementById('ventaFecha');
+                inputFecha.value = fecha;
+                inputFecha.setAttribute('data-fecha-cargada', fecha);
+                
+                // Cargar los datos de esa fecha
+                await cargarDatosVenta();
+                
+                // Scroll al inicio
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                
+                // Mostrar mensaje
+                showAlert(`📝 Editando ventas del ${fechaFormateada}. Modifica los datos y guarda cuando termines.`, 'success');
+            } else {
+                // Opción 2: Cambiar fecha de la venta
+                await cambiarFechaVenta(fecha);
+            }
+        }
+        
+        async function cambiarFechaVenta(fechaOrigen) {
+            const fechaOrigenFormateada = new Date(fechaOrigen + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            // Pedir la nueva fecha
+            const nuevaFecha = prompt(
+                `CAMBIAR FECHA DE VENTA\n\n` +
+                `Ventas del ${fechaOrigenFormateada} se moverán a otra fecha.\n\n` +
+                `Ingresa la nueva fecha (formato: AAAA-MM-DD)\n` +
+                `Ejemplo: 2026-02-13`,
+                fechaOrigen
+            );
+            
+            if (!nuevaFecha) return;
+            
+            // Validar formato de fecha
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(nuevaFecha)) {
+                showAlert('❌ Formato de fecha incorrecto. Usa: AAAA-MM-DD (ejemplo: 2026-02-13)', 'danger');
+                return;
+            }
+            
+            const nuevaFechaFormateada = new Date(nuevaFecha + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            // Confirmar el cambio
+            const confirmacion = confirm(
+                `¿Confirmas el cambio?\n\n` +
+                `DESDE: ${fechaOrigenFormateada}\n` +
+                `HACIA: ${nuevaFechaFormateada}\n\n` +
+                `Esto moverá TODAS las ventas de ese día a la nueva fecha.`
+            );
+            
+            if (!confirmacion) return;
+            
+            try {
+                // 1. Obtener las ventas de la fecha origen
+                const { data: ventasOrigen, error: errorLectura } = await db
+                    .from('ventas')
+                    .select('*')
+                    .eq('fecha', fechaOrigen);
+                
+                if (errorLectura) throw errorLectura;
+                
+                if (!ventasOrigen || ventasOrigen.length === 0) {
+                    showAlert('❌ No se encontraron ventas en la fecha origen', 'danger');
+                    return;
+                }
+                
+                // 2. Verificar si ya existen ventas en la fecha destino
+                const { data: ventasDestino } = await db
+                    .from('ventas')
+                    .select('id')
+                    .eq('fecha', nuevaFecha);
+                
+                if (ventasDestino && ventasDestino.length > 0) {
+                    const sobrescribir = confirm(
+                        `⚠️ ADVERTENCIA\n\n` +
+                        `Ya existen ventas en la fecha ${nuevaFechaFormateada}.\n\n` +
+                        `Si continúas, se ELIMINARÁN las ventas existentes y se reemplazarán con las del ${fechaOrigenFormateada}.\n\n` +
+                        `¿Deseas continuar?`
+                    );
+                    
+                    if (!sobrescribir) return;
+                    
+                    // Eliminar ventas existentes en destino
+                    await db.from('ventas').delete().eq('fecha', nuevaFecha);
+                }
+                
+                // 3. Crear nuevas ventas con la fecha nueva (sin el id)
+                const ventasNuevas = ventasOrigen.map(v => ({
+                    fecha: nuevaFecha,
+                    producto_id: v.producto_id,
+                    sobrante_anterior: v.sobrante_anterior,
+                    produccion_nueva: v.produccion_nueva,
+                    produccion: v.produccion,
+                    sobrante: v.sobrante,
+                    vendidos: v.vendidos,
+                    precio_venta: v.precio_venta,
+                    costo_unitario: v.costo_unitario,
+                    ingreso: v.ingreso,
+                    ganancia: v.ganancia
+                }));
+                
+                // 4. Insertar en la nueva fecha
+                const { error: errorInsercion } = await db
+                    .from('ventas')
+                    .insert(ventasNuevas);
+                
+                if (errorInsercion) throw errorInsercion;
+                
+                // 5. Eliminar de la fecha origen
+                await db.from('ventas').delete().eq('fecha', fechaOrigen);
+                
+                showAlert(
+                    `✅ Ventas movidas exitosamente\n` +
+                    `De: ${fechaOrigenFormateada} → A: ${nuevaFechaFormateada}`,
+                    'success'
+                );
+                
+                // 6. Recargar historial
+                await cargarHistorial();
+                
+                // 7. Preguntar si quiere mover el arqueo también
+                const { data: arqueoOrigen } = await db
+                    .from('arqueos')
+                    .select('id')
+                    .eq('fecha', fechaOrigen)
+                    .maybeSingle();
+                
+                if (arqueoOrigen) {
+                    const moverArqueo = confirm(
+                        `También existe un ARQUEO DE CAJA para el ${fechaOrigenFormateada}.\n\n` +
+                        `¿Deseas mover el arqueo a la nueva fecha también?`
+                    );
+                    
+                    if (moverArqueo) {
+                        await cambiarFechaArqueo(fechaOrigen, nuevaFecha);
+                    }
+                }
+                
+            } catch (error) {
+                showAlert('❌ Error al cambiar fecha: ' + error.message, 'danger');
+                console.error('Error cambiando fecha:', error);
+            }
+        }
+        
+        let filtroInventario = 'todos';
+        
+        async function cargarInventario() {
+            await cargarProductos();
+            
+            // Obtener la última fecha con datos
+            const { data: ultimaVenta } = await db
+                .from('ventas')
+                .select('fecha, producto_id, sobrante')
+                .order('fecha', { ascending: false })
+                .limit(100);
+            
+            if (!ultimaVenta || ultimaVenta.length === 0) {
+                document.getElementById('listaInventario').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos de inventario. Carga ventas primero.</p>';
+                document.getElementById('valorTotalInventario').textContent = '₲ 0';
+                return;
+            }
+            
+            // Obtener la fecha más reciente
+            const fechaUltima = ultimaVenta[0].fecha;
+            const ventasUltimaFecha = ultimaVenta.filter(v => v.fecha === fechaUltima);
+            
+            // Crear mapa de inventario
+            const inventario = {};
+            ventasUltimaFecha.forEach(v => {
+                inventario[v.producto_id] = v.sobrante;
+            });
+            
+            // Crear array con productos y su stock
+            const productosConStock = productos.map(p => ({
+                ...p,
+                stock: inventario[p.id] || 0,
+                valor: (inventario[p.id] || 0) * p.costo_unitario
+            })).sort((a, b) => b.stock - a.stock);
+            
+            // Filtrar según selección
+            let productosFiltrados = productosConStock;
+            if (filtroInventario === 'conStock') {
+                productosFiltrados = productosConStock.filter(p => p.stock > 0);
+            } else if (filtroInventario === 'sinStock') {
+                productosFiltrados = productosConStock.filter(p => p.stock === 0);
+            }
+            
+            // Calcular valor total
+            const valorTotal = productosConStock.reduce((sum, p) => sum + p.valor, 0);
+            
+            // Renderizar
+            const fechaFormateada = new Date(fechaUltima + 'T00:00:00').toLocaleDateString('es-PY');
+            
+            if (productosFiltrados.length === 0) {
+                document.getElementById('listaInventario').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay productos en esta categoría</p>';
+            } else {
+                document.getElementById('listaInventario').innerHTML = `
+                    <div style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-main); border-radius: 8px;">
+                        <strong>Última actualización:</strong> ${fechaFormateada}
+                    </div>
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Categoría</th>
+                                <th>Stock</th>
+                                <th>Costo Unitario</th>
+                                <th>Valor Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productosFiltrados.map(p => `
+                                <tr style="background: ${p.stock === 0 ? '#ffebee' : 'white'};">
+                                    <td style="font-weight: 600;">
+                                        ${p.stock === 0 ? '🔴 ' : p.stock > 10 ? '🟢 ' : '🟡 '}
+                                        ${p.nombre}
+                                    </td>
+                                    <td><span style="background: var(--bg-main); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">${p.categoria}</span></td>
+                                    <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 1.1rem;">
+                                        ${p.stock}
+                                    </td>
+                                    <td>₲ ${p.costo_unitario.toLocaleString()}</td>
+                                    <td style="font-weight: 600; color: ${p.valor > 0 ? 'var(--success)' : 'var(--text-light)'};">
+                                        ₲ ${p.valor.toLocaleString()}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            }
+            
+            document.getElementById('valorTotalInventario').textContent = `₲ ${valorTotal.toLocaleString()}`;
+        }
+        
+        function filtrarInventario(filtro) {
+            filtroInventario = filtro;
+            
+            // Actualizar botones
+            document.getElementById('btnTodos').className = filtro === 'todos' ? 'btn btn-primary' : 'btn btn-secondary';
+            document.getElementById('btnConStock').className = filtro === 'conStock' ? 'btn btn-success' : 'btn btn-secondary';
+            document.getElementById('btnSinStock').className = filtro === 'sinStock' ? 'btn btn-danger' : 'btn btn-secondary';
+            
+            cargarInventario();
+        }
+        
+        async function cambiarFechaArqueo(fechaOrigen, fechaDestino) {
+            try {
+                // Obtener arqueo origen
+                const { data: arqueo } = await db
+                    .from('arqueos')
+                    .select('*')
+                    .eq('fecha', fechaOrigen)
+                    .maybeSingle();
+                
+                if (!arqueo) return;
+                
+                // Eliminar arqueo en destino si existe
+                await db.from('arqueos').delete().eq('fecha', fechaDestino);
+                
+                // Actualizar la fecha del arqueo
+                await db
+                    .from('arqueos')
+                    .update({ fecha: fechaDestino })
+                    .eq('fecha', fechaOrigen);
+                
+                showAlert('✅ Arqueo también movido a la nueva fecha', 'success');
+                
+            } catch (error) {
+                showAlert('⚠️ No se pudo mover el arqueo: ' + error.message, 'warning');
+            }
+        }
+        
+        async function cargarProductos() {
+            const { data } = await db.from('productos').select('*').eq('activo', true).order('nombre');
+            if (data) productos = data;
+        }
+        
+        async function cargarDatosVenta() {
+            const fechaSeleccionada = document.getElementById('ventaFecha').value;
+            if (!fechaSeleccionada) return;
+            
+            const fechaActualInput = document.getElementById('ventaFecha');
+            const fechaAnteriorCargada = fechaActualInput.getAttribute('data-fecha-cargada');
+            
+            // Si hay una fecha anterior cargada, verificar que tenga arqueo
+            if (fechaAnteriorCargada && fechaAnteriorCargada !== fechaSeleccionada) {
+                const { data: ventasFechaAnterior } = await db
+                    .from('ventas')
+                    .select('id')
+                    .eq('fecha', fechaAnteriorCargada)
+                    .limit(1);
+                
+                if (ventasFechaAnterior && ventasFechaAnterior.length > 0) {
+                    const { data: arqueoAnterior } = await db
+                        .from('arqueos')
+                        .select('id')
+                        .eq('fecha', fechaAnteriorCargada)
+                        .maybeSingle();
+                    
+                    if (!arqueoAnterior) {
+                        const fechaFormateada = formatearFechaConDia(fechaAnteriorCargada);
+                        const continuar = confirm(
+                            `🚨 ADVERTENCIA IMPORTANTE 🚨\n\n` +
+                            `El día ${fechaFormateada} tiene VENTAS REGISTRADAS\n` +
+                            `pero NO tiene ARQUEO DE CAJA guardado.\n\n` +
+                            `Esto significa que:\n` +
+                            `• No registraste el conteo de dinero\n` +
+                            `• No hay control de efectivo/POS/Pedidos Ya\n` +
+                            `• El cierre del día está INCOMPLETO\n\n` +
+                            `Se recomienda CANCELAR y completar el arqueo ahora.\n\n` +
+                            `¿Estás SEGURO de cambiar de fecha sin completar el arqueo?`
+                        );
+                        
+                        if (!continuar) {
+                            fechaActualInput.value = fechaAnteriorCargada;
+                            showAlert('⚠️ Cambio de fecha cancelado. Por favor completa el arqueo de caja.', 'warning');
+                            return;
+                        } else {
+                            showAlert('⚠️ RECORDATORIO: Falta arqueo del día ' + fechaFormateada, 'danger');
+                        }
+                    }
+                }
+            }
+            
+            fechaActualInput.setAttribute('data-fecha-cargada', fechaSeleccionada);
+            
+            // 1) Primero verificar si la fecha seleccionada ya tiene ventas guardadas.
+            // Si tiene, se cargan esos datos y no se arrastran sobrantes.
+            const { data: ventasHoy } = await db
+                .from('ventas')
+                .select('*')
+                .eq('fecha', fechaSeleccionada);
+            
+            if (ventasHoy && ventasHoy.length > 0) {
+                cargarDatosExistentes(ventasHoy);
+                limpiarVentasDraft(fechaSeleccionada);
+                return;
+            }
+            
+            // 2) Buscar la última FECHA TRABAJADA anterior, aunque hayan pasado varios días sin abrir.
+            const { data: ultimaFechaData, error: errorUltimaFecha } = await db
+                .from('ventas')
+                .select('fecha')
+                .lt('fecha', fechaSeleccionada)
+                .order('fecha', { ascending: false })
+                .limit(1);
+            
+            if (errorUltimaFecha) {
+                console.error('Error buscando último día trabajado:', errorUltimaFecha);
+                showAlert('❌ No se pudo buscar el último día trabajado: ' + errorUltimaFecha.message, 'danger');
+                limpiarFormularioVentas();
+                return;
+            }
+            
+            if (!ultimaFechaData || ultimaFechaData.length === 0) {
+                limpiarFormularioVentas();
+                return;
+            }
+            
+            const fechaAnterior = ultimaFechaData[0].fecha;
+            const { data: ventasDiaAnterior, error: errorVentasAnterior } = await db
+                .from('ventas')
+                .select('*')
+                .eq('fecha', fechaAnterior);
+            
+            if (errorVentasAnterior) {
+                console.error('Error cargando ventas del último día trabajado:', errorVentasAnterior);
+                showAlert('❌ No se pudieron cargar los sobrantes anteriores: ' + errorVentasAnterior.message, 'danger');
+                limpiarFormularioVentas();
+                return;
+            }
+            
+            // 3) Cargar siempre los sobrantes reales del último día trabajado por producto_id.
+            cargarSobrantesComoProduccion(ventasDiaAnterior || [], fechaAnterior);
+            
+            // 4) Si existe un borrador local para la fecha nueva, restaurar solo campos editables.
+            // No se restaura "Sobrante Ayer" del borrador porque eso puede traer datos viejos, como el 33.
+            const restaurado = restaurarVentasDraft(fechaSeleccionada, { restaurarSobranteAnterior: false });
+            if (restaurado) {
+                const alertDiv = document.getElementById('alertSobrantes');
+                alertDiv.className = 'alert alert-warning';
+                alertDiv.innerHTML += '<br>💾 <strong>También se restauró un borrador no guardado</strong> de producido/averiados/sobrante de hoy. El sobrante anterior se recalculó desde el último día trabajado.';
+            }
+        }
+        
+        function limpiarFormularioVentas() {
+            productos.forEach(p => {
+                document.getElementById(`sobrant_ant_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = 0;
+                document.getElementById(`sobr_${p.id}`).value = 0;
+            });
+            calcularResumen();
+            
+            const alertDiv = document.getElementById('alertSobrantes');
+            alertDiv.className = 'hidden';
+        }
+        
+        function cargarDatosExistentes(ventas) {
+            // Limpiar primero
+            productos.forEach(p => {
+                document.getElementById(`sobrant_ant_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = 0;
+                document.getElementById(`sobr_${p.id}`).value = 0;
+            });
+            
+            // Cargar los datos guardados
+            ventas.forEach(v => {
+                const sobrantAntInput = document.getElementById(`sobrant_ant_${v.producto_id}`);
+                const prodHoyInput = document.getElementById(`prod_hoy_${v.producto_id}`);
+                const prodInput = document.getElementById(`prod_${v.producto_id}`);
+                const averInput = document.getElementById(`aver_${v.producto_id}`);
+                const sobrInput = document.getElementById(`sobr_${v.producto_id}`);
+                
+                if (prodInput) prodInput.value = v.produccion;
+                if (averInput) averInput.value = v.averiados || 0;
+                if (sobrInput) sobrInput.value = v.sobrante;
+                
+                // Calcular cuánto fue sobrante anterior vs producido hoy
+                // Si los datos tienen produccion_nueva guardada, usarla; sino asumir que toda la producción fue nueva
+                if (prodHoyInput) {
+                    prodHoyInput.value = v.produccion_nueva || v.produccion;
+                }
+                if (sobrantAntInput) {
+                    sobrantAntInput.value = v.sobrante_anterior || 0;
+                }
+            });
+            
+            calcularResumen();
+            
+            const alertDiv = document.getElementById('alertSobrantes');
+            alertDiv.className = 'alert alert-info';
+            alertDiv.innerHTML = '📋 Cargados datos guardados para esta fecha';
+        }
+        
+        function cargarSobrantesComoProduccion(ventasDiaAnterior, fechaAnterior) {
+            // Limpiar primero
+            productos.forEach(p => {
+                document.getElementById(`sobrant_ant_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = 0;
+                document.getElementById(`sobr_${p.id}`).value = 0;
+            });
+            
+            let totalSobrantes = 0;
+            const sobrantesPorProducto = {};
+            
+            // Agrupar por producto_id. Esto evita que el sobrante de un producto se mezcle con otro
+            // si cambia el orden de la tabla o si falta algún producto.
+            (ventasDiaAnterior || []).forEach(v => {
+                const productoId = String(v.producto_id);
+                sobrantesPorProducto[productoId] = (sobrantesPorProducto[productoId] || 0) + (Number(v.sobrante) || 0);
+            });
+            
+            productos.forEach(p => {
+                const sobranteAnterior = sobrantesPorProducto[String(p.id)] || 0;
+                const sobrantAntInput = document.getElementById(`sobrant_ant_${p.id}`);
+                const prodInput = document.getElementById(`prod_${p.id}`);
+                
+                if (sobrantAntInput && prodInput) {
+                    sobrantAntInput.value = sobranteAnterior;
+                    prodInput.value = sobranteAnterior; // Total producción inicial = sobrante anterior
+                    totalSobrantes += sobranteAnterior;
+                }
+            });
+            
+            calcularResumen();
+            
+            const alertDiv = document.getElementById('alertSobrantes');
+            if (totalSobrantes > 0) {
+                const fechaFormateada = formatearFechaConDia(fechaAnterior);
+                alertDiv.className = 'alert alert-success';
+                alertDiv.innerHTML = `✅ Se cargaron <strong>${totalSobrantes} unidades sobrantes</strong> del último día trabajado: <strong>${fechaFormateada}</strong>.`;
+            } else {
+                alertDiv.className = 'alert alert-warning';
+                alertDiv.innerHTML = `ℹ️ El último día trabajado (${formatearFechaConDia(fechaAnterior)}) no dejó sobrantes.`;
+            }
+        }
+        
+        async function renderProductosVenta() {
+            const container = document.getElementById('productosVenta');
+            if (productos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay productos</p>';
+                return;
+            }
+            
+            // Obtener ventas de los últimos 30 días para ordenar productos (garantiza ranking siempre activo)
+            const hoy = new Date();
+            const hace30dias = new Date();
+            hace30dias.setDate(hace30dias.getDate() - 30);
+            const desde30dias = fechaLocalISO(hace30dias);
+            const { data: ventasMes } = await db
+                .from('ventas')
+                .select('producto_id, vendidos')
+                .gte('fecha', desde30dias);
+            
+            // Calcular total vendido por producto en los últimos 30 días
+            const ventasPorProducto = {};
+            if (ventasMes) {
+                ventasMes.forEach(v => {
+                    if (!ventasPorProducto[v.producto_id]) {
+                        ventasPorProducto[v.producto_id] = 0;
+                    }
+                    ventasPorProducto[v.producto_id] += v.vendidos;
+                });
+            }
+            
+            // Ordenar productos por ventas de los últimos 30 días (mayor a menor)
+            const productosOrdenados = [...productos].sort((a, b) => {
+                const ventasA = ventasPorProducto[a.id] || 0;
+                const ventasB = ventasPorProducto[b.id] || 0;
+                return ventasB - ventasA;
+            });
+            
+            container.innerHTML = productosOrdenados.map((p, index) => `
+                <div class="product-row">
+                    <div class="product-name">
+                        ${ventasPorProducto[p.id] ? `<span style="color: var(--primary); font-weight: 800; margin-right: 0.25rem;">★</span><span style="font-size: 0.7rem; background: var(--primary); color: white; border-radius: 10px; padding: 0.1rem 0.4rem; margin-right: 0.4rem; font-weight: 700;">#${productosOrdenados.indexOf(p) + 1}</span>` : ''}
+                        ${p.nombre}
+                        ${ventasPorProducto[p.id] ? `<span style="font-size: 0.75rem; color: var(--text-light); margin-left: 0.5rem;">(${ventasPorProducto[p.id]} últ. 30d)</span>` : ''}
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Sobrante Ayer</label>
+                        <input type="number" id="sobrant_ant_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Producido Hoy</label>
+                        <input type="number" id="prod_hoy_${p.id}" class="form-input" value="0" onchange="calcularProduccionTotal(${p.id})" onkeydown="handleEnterVentas(event, 'prod_hoy_${p.id}')">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Total Producción</label>
+                        <input type="number" id="prod_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Averiados</label>
+                        <input type="number" id="aver_${p.id}" class="form-input" value="0" onchange="calcularResumen()" onkeydown="handleEnterVentas(event, 'aver_${p.id}')" style="background: #fff3cd;">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Sobrante Hoy</label>
+                        <input type="number" id="sobr_${p.id}" class="form-input" value="0" onchange="calcularResumen()" onkeydown="handleEnterVentas(event, 'sobr_${p.id}')">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Vendidos</label>
+                        <input type="number" id="vend_${p.id}" class="form-input" value="0" readonly style="background: #f8f9fa; font-weight: 600; color: var(--primary);">
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">Ingreso</label>
+                        <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 0.5rem; color: var(--success);" id="ingr_${p.id}">₲ 0</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        function calcularProduccionTotal(productoId) {
+            const sobranteAnterior = parseInt(document.getElementById(`sobrant_ant_${productoId}`).value) || 0;
+            const producidoHoy = parseInt(document.getElementById(`prod_hoy_${productoId}`).value) || 0;
+            const totalProduccion = sobranteAnterior + producidoHoy;
+            
+            document.getElementById(`prod_${productoId}`).value = totalProduccion;
+            calcularResumen();
+        }
+        
+        async function handleEnterVentas(event, currentId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                // Obtener el orden actual de productos en el DOM
+                const productRows = document.querySelectorAll('.product-row');
+                const orden = [];
+                
+                productRows.forEach(row => {
+                    const prodHoyInput = row.querySelector('[id^="prod_hoy_"]');
+                    const averInput = row.querySelector('[id^="aver_"]');
+                    const sobrInput = row.querySelector('[id^="sobr_"]:not([id*="_ant_"])');
+                    if (prodHoyInput) orden.push(prodHoyInput.id);
+                    if (averInput) orden.push(averInput.id);
+                    if (sobrInput) orden.push(sobrInput.id);
+                });
+                
+                const currentIndex = orden.indexOf(currentId);
+                if (currentIndex !== -1 && currentIndex < orden.length - 1) {
+                    const nextId = orden[currentIndex + 1];
+                    const nextElement = document.getElementById(nextId);
+                    if (nextElement) {
+                        nextElement.focus();
+                        nextElement.select();
+                    }
+                }
+            }
+        }
+        
+        function calcularResumen() {
+            let totalVendidos = 0, totalIngreso = 0, totalGanancia = 0, totalAveriados = 0;
+            let hayError = false;
+            
+            productos.forEach(p => {
+                const produccion = parseInt(document.getElementById(`prod_${p.id}`).value) || 0;
+                const averiados = parseInt(document.getElementById(`aver_${p.id}`).value) || 0;
+                const sobrante = parseInt(document.getElementById(`sobr_${p.id}`).value) || 0;
+                const vendidos = produccion - averiados - sobrante;
+                const ingreso = Math.max(0, vendidos) * p.precio_venta;
+                const ganancia = Math.max(0, vendidos) * (p.precio_venta - p.costo_unitario);
+                
+                // Marcar fila en rojo si hay datos inválidos
+                const row = document.getElementById(`vend_${p.id}`)?.closest('.product-row');
+                if (produccion > 0 && vendidos < 0) {
+                    hayError = true;
+                    document.getElementById(`vend_${p.id}`).value = '⚠️ ERROR';
+                    document.getElementById(`vend_${p.id}`).style.color = 'var(--danger)';
+                    document.getElementById(`ingr_${p.id}`).textContent = '⚠️';
+                    if (row) row.style.outline = '2px solid var(--danger)';
+                } else {
+                    document.getElementById(`vend_${p.id}`).value = vendidos;
+                    document.getElementById(`vend_${p.id}`).style.color = 'var(--primary)';
+                    document.getElementById(`ingr_${p.id}`).textContent = `₲ ${ingreso.toLocaleString()}`;
+                    if (row) row.style.outline = '';
+                    totalVendidos += vendidos;
+                    totalIngreso += ingreso;
+                    totalGanancia += ganancia;
+                }
+                
+                if (produccion > 0) totalAveriados += averiados;
+            });
+            
+            ventaDelDiaActual = totalIngreso;
+            document.getElementById('totalVendidoDia').textContent = hayError ? '⚠️ Revisá los datos' : totalVendidos;
+            document.getElementById('ingresoTotalDia').textContent = `₲ ${totalIngreso.toLocaleString()}`;
+            document.getElementById('gananciaEstimadaDia').textContent = `₲ ${totalGanancia.toLocaleString()}`;
+            
+            // Averiados en resumen
+            const averCard = document.getElementById('averiadosTotalDia');
+            if (averCard) {
+                averCard.textContent = totalAveriados;
+                averCard.closest('.stat-card').style.opacity = totalAveriados > 0 ? '1' : '0.5';
+            }
+
+            // Guardar borrador automáticamente
+            guardarVentasDraft();
+        }
+        
+        async function guardarVentas() {
+            const fecha = document.getElementById('ventaFecha').value;
+            if (!fecha) { showAlert('⚠️ Selecciona una fecha', 'warning'); return; }
+            
+            const ventas = [];
+            let errores = [];
+            
+            for (const p of productos) {
+                const sobranteAnterior = parseInt(document.getElementById(`sobrant_ant_${p.id}`).value) || 0;
+                const producidoHoy = parseInt(document.getElementById(`prod_hoy_${p.id}`).value) || 0;
+                const produccion = parseInt(document.getElementById(`prod_${p.id}`).value) || 0;
+                const averiados = parseInt(document.getElementById(`aver_${p.id}`).value) || 0;
+                const sobrante = parseInt(document.getElementById(`sobr_${p.id}`).value) || 0;
+                const vendidos = produccion - averiados - sobrante;
+                
+                if (produccion > 0) {
+                    // Validación: vendidos no puede ser negativo
+                    if (vendidos < 0) {
+                        errores.push(`• ${p.nombre}: Sobrante (${sobrante}) + Averiados (${averiados}) > Producción (${produccion})`);
+                        continue;
+                    }
+                    ventas.push({
+                        fecha, producto_id: p.id, 
+                        sobrante_anterior: sobranteAnterior,
+                        produccion_nueva: producidoHoy,
+                        produccion, averiados, sobrante, vendidos,
+                        precio_venta: p.precio_venta, 
+                        costo_unitario: p.costo_unitario,
+                        ingreso: vendidos * p.precio_venta,
+                        ganancia: vendidos * (p.precio_venta - p.costo_unitario)
+                    });
+                }
+            }
+            
+            // Bloquear guardado si hay errores
+            if (errores.length > 0) {
+                showAlert(`❌ Corregí estos errores antes de guardar:\n${errores.join('\n')}`, 'danger');
+                return;
+            }
+            
+            if (ventas.length === 0) { showAlert('⚠️ No hay datos para guardar', 'warning'); return; }
+            
+            // Modal de confirmación con resumen
+            const totalVend = ventas.reduce((s, v) => s + v.vendidos, 0);
+            const totalProd = ventas.reduce((s, v) => s + v.produccion, 0);
+            const totalSobr = ventas.reduce((s, v) => s + v.sobrante, 0);
+            const totalAver = ventas.reduce((s, v) => s + v.averiados, 0);
+            const totalIngr = ventas.reduce((s, v) => s + v.ingreso, 0);
+            const totalGan  = ventas.reduce((s, v) => s + v.ganancia, 0);
+            const fechaFmt  = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'long', day: '2-digit', month: 'long' });
+            
+            const confirmado = await mostrarModalConfirmacion(`
+                <h3 style="color:var(--secondary);margin-bottom:1.25rem;">📋 Confirmar guardado — ${fechaFmt}</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin-bottom:1.25rem;">
+                    <div style="background:var(--bg-main);padding:1rem;border-radius:8px;text-align:center;">
+                        <div style="font-size:0.85rem;color:var(--text-light);">Producción total</div>
+                        <div style="font-size:1.5rem;font-weight:800;">${totalProd}</div>
+                    </div>
+                    <div style="background:var(--bg-main);padding:1rem;border-radius:8px;text-align:center;">
+                        <div style="font-size:0.85rem;color:var(--text-light);">Vendidos</div>
+                        <div style="font-size:1.5rem;font-weight:800;color:var(--success);">${totalVend}</div>
+                    </div>
+                    <div style="background:var(--bg-main);padding:1rem;border-radius:8px;text-align:center;">
+                        <div style="font-size:0.85rem;color:var(--text-light);">Sobrantes</div>
+                        <div style="font-size:1.5rem;font-weight:800;color:var(--accent);">${totalSobr}</div>
+                    </div>
+                    <div style="background:${totalAver > 0 ? '#ffe0e0' : 'var(--bg-main)'};padding:1rem;border-radius:8px;text-align:center;">
+                        <div style="font-size:0.85rem;color:var(--text-light);">🔧 Averiados</div>
+                        <div style="font-size:1.5rem;font-weight:800;color:var(--danger);">${totalAver}</div>
+                    </div>
+                </div>
+                <div style="background:linear-gradient(135deg,var(--primary),var(--primary-dark));color:white;padding:1rem;border-radius:8px;display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-weight:700;">Ingreso Total</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-size:1.25rem;font-weight:800;">₲ ${totalIngr.toLocaleString()}</span>
+                </div>
+                <div style="background:linear-gradient(135deg,var(--success),#1e7e34);color:white;padding:0.75rem 1rem;border-radius:8px;display:flex;justify-content:space-between;align-items:center;margin-top:0.5rem;">
+                    <span style="font-weight:700;">Ganancia Estimada</span>
+                    <span style="font-family:'JetBrains Mono',monospace;font-weight:800;">₲ ${totalGan.toLocaleString()}</span>
+                </div>
+                <p style="margin-top:1.25rem;color:var(--text-light);font-size:0.9rem;text-align:center;">¿Los datos son correctos?</p>
+            `);
+            
+            if (!confirmado) return;
+            
+            await db.from('ventas').delete().eq('fecha', fecha);
+            const { error } = await db.from('ventas').insert(ventas);
+            
+            if (error) {
+                showAlert('❌ Error: ' + error.message, 'danger');
+            } else {
+                showAlert('✅ Ventas guardadas correctamente', 'success');
+                limpiarVentasDraft(fecha); // Limpiar borrador local
+                
+                const { data: arqueoExistente } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
+                
+                if (!arqueoExistente) {
+                    const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
+                    const alertDiv = document.getElementById('alertSobrantes');
+                    alertDiv.className = 'alert alert-warning';
+                    alertDiv.innerHTML = `⚠️ <strong>IMPORTANTE:</strong> Guardaste las ventas del ${fechaFormateada} pero aún <strong>NO has guardado el arqueo de caja</strong>.<br><br>Por favor, ve a la pestaña <strong>💰 Arqueo de Caja</strong> para completar el cierre del día.`;
+                    showAlert('⚠️ Recuerda: Falta el arqueo de caja del día ' + fechaFormateada, 'warning');
+                } else {
+                    document.getElementById('alertSobrantes').className = 'hidden';
+                }
+            }
+        }
+        
+        function renderDenominaciones() {
+            const billetesHtml = BILLETES.map((d, index) => `
+                <div class="denomination-row">
+                    <div class="denomination-label">₲ ${d.toLocaleString()}</div>
+                    <input type="number" id="bil_${d}" class="form-input" value="0" oninput="calcularArqueo()" onchange="calcularArqueo()" onkeypress="handleEnterArqueo(event, 'bil_${d}')">
+                    <div class="denomination-total" id="total_bil_${d}">₲ 0</div>
+                </div>
+            `).join('');
+            
+            const monedasHtml = MONEDAS.map((d, index) => `
+                <div class="denomination-row">
+                    <div class="denomination-label">₲ ${d.toLocaleString()}</div>
+                    <input type="number" id="mon_${d}" class="form-input" value="0" oninput="calcularArqueo()" onchange="calcularArqueo()" onkeypress="handleEnterArqueo(event, 'mon_${d}')">
+                    <div class="denomination-total" id="total_mon_${d}">₲ 0</div>
+                </div>
+            `).join('');
+            
+            document.getElementById('billetes').innerHTML = billetesHtml;
+            document.getElementById('monedas').innerHTML = monedasHtml;
+        }
+        
+        function handleEnterArqueo(event, currentId) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                
+                // Orden de campos
+                const orden = [
+                    ...BILLETES.map(d => `bil_${d}`),
+                    ...MONEDAS.map(d => `mon_${d}`),
+                    'sencilloInicio',
+                    'transferencias',
+                    'pedidosYa',
+                    'monchis',
+                    'pos'
+                ];
+                
+                const currentIndex = orden.indexOf(currentId);
+                if (currentIndex !== -1 && currentIndex < orden.length - 1) {
+                    const nextId = orden[currentIndex + 1];
+                    const nextElement = document.getElementById(nextId);
+                    if (nextElement) {
+                        nextElement.focus();
+                        nextElement.select();
+                    }
+                }
+            }
+        }
+        
+        function calcularArqueo() {
+            let total = 0;
+            BILLETES.forEach(d => {
+                const cantidad = parseInt(document.getElementById(`bil_${d}`).value) || 0;
+                const subtotal = cantidad * d;
+                document.getElementById(`total_bil_${d}`).textContent = `₲ ${subtotal.toLocaleString()}`;
+                total += subtotal;
+            });
+            MONEDAS.forEach(d => {
+                const cantidad = parseInt(document.getElementById(`mon_${d}`).value) || 0;
+                const subtotal = cantidad * d;
+                document.getElementById(`total_mon_${d}`).textContent = `₲ ${subtotal.toLocaleString()}`;
+                total += subtotal;
+            });
+            
+            document.getElementById('totalEfectivo').textContent = `₲ ${total.toLocaleString()}`;
+            calcularRendicion();
+            guardarArqueoDraft();
+        }
+        
+        async function cargarVentaDelDia() {
+            const fecha = document.getElementById('arqueoFecha').value;
+            const { data } = await db.from('ventas').select('ingreso').eq('fecha', fecha);
+
+            let total = 0;
+            if (data && data.length > 0) total = data.reduce((sum, v) => sum + v.ingreso, 0);
+
+            ventaDelDiaActual = total;
+            document.getElementById('ventaDelDia').textContent = `₲ ${total.toLocaleString()}`;
+
+            // Cargar arqueo existente si hay, sino verificar borrador local
+            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
+
+            if (arqueoData) {
+                // Hay arqueo guardado en DB — limpiar cualquier borrador local obsoleto
+                limpiarArqueoDraft(fecha);
+                const { data: gastosData } = await db.from('gastos').select('*').eq('arqueo_id', arqueoData.id);
+                if (gastosData) {
+                    gastos = gastosData.map(g => ({ concepto: g.concepto, categoria: g.categoria || 'Otros', monto: g.monto }));
+                    renderGastos();
+                }
+            } else {
+                // No hay arqueo en DB — verificar borrador local
+                const restaurado = restaurarArqueoDraft(fecha);
+                if (!restaurado) {
+                    gastos = [];
+                    renderGastos();
+                }
+            }
+
+            calcularRendicion();
+        }
+        
+        function calcularRendicion() {
+            const efectivo = calcularTotalEfectivo();
+            const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
+            const transferencias = parseInt(document.getElementById('transferencias').value) || 0;
+            const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
+            const monchis = parseInt(document.getElementById('monchis').value) || 0;
+            const pos = parseInt(document.getElementById('pos').value) || 0;
+            const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
+            
+            const totalTiene = efectivo + transferencias + pedidosYa + monchis + pos + totalGastos;
+            const debeTener = ventaDelDiaActual + sencillo;
+            const diferencia = totalTiene - debeTener;
+            
+            document.getElementById('totalGastos').textContent = `₲ ${totalGastos.toLocaleString()}`;
+            document.getElementById('totalTiene').textContent = `₲ ${totalTiene.toLocaleString()}`;
+            document.getElementById('debeTener').textContent = `₲ ${debeTener.toLocaleString()}`;
+            document.getElementById('diferencia').textContent = `₲ ${diferencia.toLocaleString()}`;
+            document.getElementById('diferencia').style.color = diferencia >= 0 ? 'var(--success)' : 'var(--danger)';
+            guardarArqueoDraft();
+        }
+        
+        function calcularTotalEfectivo() {
+            let total = 0;
+            BILLETES.forEach(d => total += (parseInt(document.getElementById(`bil_${d}`).value) || 0) * d);
+            MONEDAS.forEach(d => total += (parseInt(document.getElementById(`mon_${d}`).value) || 0) * d);
+            return total;
+        }
+        
+        function agregarGasto() {
+            const concepto = document.getElementById('gastoConcepto').value.trim();
+            const categoria = document.getElementById('gastoCategoria').value;
+            const monto = parseInt(document.getElementById('gastoMonto').value);
+            
+            if (!concepto) { showAlert('⚠️ Ingresá el concepto del gasto', 'warning'); document.getElementById('gastoConcepto').focus(); return; }
+            if (!monto || monto <= 0) { showAlert('⚠️ Ingresá un monto válido', 'warning'); document.getElementById('gastoMonto').focus(); return; }
+            
+            gastos.push({ concepto, categoria, monto });
+            renderGastos();
+            calcularRendicion();
+            guardarArqueoDraft();
+
+            // Limpiar campos
+            document.getElementById('gastoConcepto').value = '';
+            document.getElementById('gastoMonto').value = '';
+            document.getElementById('gastoConcepto').focus();
+        }
+        
+        function renderGastos() {
+            const container = document.getElementById('listaGastos');
+            
+            if (gastos.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 1rem; background: var(--bg-main); border-radius: 8px;">No hay gastos registrados</p>';
+                return;
+            }
+            
+            container.innerHTML = `
+                <div style="background: var(--bg-main); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    ${gastos.map((g, i) => `
+                        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem; background: white; border-radius: 6px; margin-bottom: 0.5rem;">
+                            <div>
+                                <div style="font-weight: 600; color: var(--secondary);">${g.concepto}</div>
+                                <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.15rem;">${g.categoria || 'Otros'}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 1rem;">
+                                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</span>
+                                <button onclick="eliminarGasto(${i})" class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.875rem;">🗑️</button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        function eliminarGasto(index) {
+            if (confirm('¿Eliminar este gasto?')) {
+                gastos.splice(index, 1);
+                renderGastos();
+                calcularRendicion();
+                guardarArqueoDraft();
+            }
+        }
+        
+        async function guardarArqueo() {
+            const fecha = document.getElementById('arqueoFecha').value;
+            const responsable = document.getElementById('arqueoResponsable').value;
+            if (!fecha || !responsable) { showAlert('⚠️ Completa todos los campos', 'warning'); return; }
+            
+            // Validar que existan ventas para este día
+            const { data: ventasDelDia } = await db.from('ventas').select('id').eq('fecha', fecha).limit(1);
+            if (!ventasDelDia || ventasDelDia.length === 0) {
+                const fechaFmt = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY');
+                const igualContinuar = await mostrarModalConfirmacion(`
+                    <h3 style="color:var(--danger);margin-bottom:1rem;">⚠️ Sin ventas registradas</h3>
+                    <p>No hay ventas registradas para el <strong>${fechaFmt}</strong>.</p>
+                    <p style="margin-top:0.75rem;">¿Querés guardar el arqueo igual? (por ejemplo, día sin actividad)</p>
+                `);
+                if (!igualContinuar) return;
+            }
+            
+            const totalGastos = gastos.reduce((sum, g) => sum + g.monto, 0);
+            const efectivo = calcularTotalEfectivo();
+            const sencillo = parseInt(document.getElementById('sencilloInicio').value) || 0;
+            const transferencias = parseInt(document.getElementById('transferencias').value) || 0;
+            const pedidosYa = parseInt(document.getElementById('pedidosYa').value) || 0;
+            const monchis = parseInt(document.getElementById('monchis').value) || 0;
+            const pos = parseInt(document.getElementById('pos').value) || 0;
+            
+            const arqueo = {
+                fecha, responsable, efectivo,
+                sencillo_inicio: sencillo,
+                transferencias: transferencias,
+                pedidos_ya: pedidosYa,
+                monchis: monchis,
+                pos: pos,
+                gastos: totalGastos,
+                diferencia: (efectivo + transferencias + pedidosYa + monchis + pos + totalGastos) - (ventaDelDiaActual + sencillo)
+            };
+            
+            const { error } = await db.from('arqueos').upsert(arqueo, { onConflict: 'fecha' });
+            if (error) { showAlert('❌ Error al guardar arqueo: ' + error.message, 'danger'); return; }
+            
+            const { data: arqueoData } = await db.from('arqueos').select('id').eq('fecha', fecha).maybeSingle();
+            
+            if (arqueoData) {
+                // Guardar gastos: primero eliminar los anteriores, luego insertar
+                await db.from('gastos').delete().eq('arqueo_id', arqueoData.id);
+                
+                if (gastos.length > 0) {
+                    const gastosConId = gastos.map(g => ({
+                        arqueo_id: arqueoData.id,
+                        concepto: g.concepto,
+                        categoria: g.categoria || 'Otros',
+                        monto: g.monto
+                    }));
+                    const { error: errorGastos } = await db.from('gastos').insert(gastosConId);
+                    if (errorGastos) {
+                        showAlert('⚠️ Arqueo guardado pero hubo un error con los gastos: ' + errorGastos.message, 'warning');
+                        return;
+                    }
+                }
+            }
+            
+            showAlert('✅ Arqueo guardado correctamente', 'success');
+            limpiarFormularioArqueo();
+        }
+        
+        function limpiarFormularioArqueo() {
+            const fechaArqueo = document.getElementById('arqueoFecha').value;
+            limpiarArqueoDraft(fechaArqueo); // Limpiar borrador local
+
+            // Evitar que el recalculo final vuelva a guardar un borrador después de poner todo en cero.
+            suspendArqueoDraft = true;
+
+            // Limpiar billetes
+            BILLETES.forEach(d => {
+                document.getElementById(`bil_${d}`).value = 0;
+                document.getElementById(`total_bil_${d}`).textContent = '₲ 0';
+            });
+            
+            // Limpiar monedas
+            MONEDAS.forEach(d => {
+                document.getElementById(`mon_${d}`).value = 0;
+                document.getElementById(`total_mon_${d}`).textContent = '₲ 0';
+            });
+            
+            // Limpiar campos de rendición
+            document.getElementById('sencilloInicio').value = 0;
+            document.getElementById('transferencias').value = 0;
+            document.getElementById('pedidosYa').value = 0;
+            document.getElementById('monchis').value = 0;
+            document.getElementById('pos').value = 0;
+            document.getElementById('gastoConcepto').value = '';
+            document.getElementById('gastoMonto').value = '';
+            
+            // Limpiar gastos
+            gastos = [];
+            renderGastos();
+            
+            // Poner los totales visualmente en cero después de guardar el arqueo.
+            document.getElementById('totalEfectivo').textContent = '₲ 0';
+            document.getElementById('totalGastos').textContent = '₲ 0';
+            document.getElementById('totalTiene').textContent = '₲ 0';
+            document.getElementById('debeTener').textContent = `₲ ${ventaDelDiaActual.toLocaleString()}`;
+            document.getElementById('diferencia').textContent = `₲ ${(-ventaDelDiaActual).toLocaleString()}`;
+            document.getElementById('diferencia').style.color = ventaDelDiaActual === 0 ? 'var(--success)' : 'var(--danger)';
+
+            suspendArqueoDraft = false;
+            limpiarArqueoDraft(fechaArqueo);
+        }
+        
+        function mostrarFormProducto() {
+            document.getElementById('formProducto').classList.remove('hidden');
+            document.getElementById('productoId').value = '';
+            document.getElementById('productoNombre').value = '';
+            document.getElementById('productoPrecio').value = '';
+            document.getElementById('productoCosto').value = '';
+        }
+        
+        function cancelarProducto() {
+            document.getElementById('formProducto').classList.add('hidden');
+        }
+        
+        async function guardarProducto() {
+            const id = document.getElementById('productoId').value;
+            const producto = {
+                nombre: document.getElementById('productoNombre').value.toUpperCase(),
+                categoria: document.getElementById('productoCategoria').value,
+                precio_venta: parseInt(document.getElementById('productoPrecio').value),
+                costo_unitario: parseInt(document.getElementById('productoCosto').value) || 0
+            };
+            
+            if (!producto.nombre || !producto.precio_venta) {
+                showAlert('⚠️ Completa los campos', 'warning');
+                return;
+            }
+            
+            const { error } = id 
+                ? await db.from('productos').update(producto).eq('id', id)
+                : await db.from('productos').insert(producto);
+            
+            if (error) showAlert('❌ Error: ' + error.message, 'danger');
+            else {
+                showAlert('✅ Producto guardado', 'success');
+                cancelarProducto();
+                await cargarProductos();
+                cargarListaProductos();
+                await renderProductosVenta();
+            }
+        }
+        
+        async function cargarListaProductos() {
+            await cargarProductos();
+            if (productos.length === 0) {
+                document.getElementById('listaProductos').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay productos</p>';
+                return;
+            }
+            
+            document.getElementById('listaProductos').innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Categoría</th>
+                            <th>Precio Venta</th>
+                            <th>Costo</th>
+                            <th>Ganancia</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${productos.map(p => `
+                            <tr>
+                                <td style="font-weight: 600;">${p.nombre}</td>
+                                <td><span style="background: var(--bg-main); padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">${p.categoria}</span></td>
+                                <td>₲ ${p.precio_venta.toLocaleString()}</td>
+                                <td>₲ ${p.costo_unitario.toLocaleString()}</td>
+                                <td style="color: var(--success); font-weight: 600;">₲ ${(p.precio_venta - p.costo_unitario).toLocaleString()}</td>
+                                <td>
+                                    <button onclick="editarProducto(${p.id})" class="btn btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.875rem;">✏️</button>
+                                    <button onclick="eliminarProducto(${p.id})" class="btn btn-danger" style="padding: 0.5rem 1rem; font-size: 0.875rem;">🗑️</button>
+                                </td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+        
+        async function editarProducto(id) {
+            const p = productos.find(pr => pr.id === id);
+            if (!p) return;
+            
+            document.getElementById('productoId').value = p.id;
+            document.getElementById('productoNombre').value = p.nombre;
+            document.getElementById('productoCategoria').value = p.categoria;
+            document.getElementById('productoPrecio').value = p.precio_venta;
+            document.getElementById('productoCosto').value = p.costo_unitario;
+            document.getElementById('formProducto').classList.remove('hidden');
+        }
+        
+        async function eliminarProducto(id) {
+            if (!confirm('¿Eliminar este producto?')) return;
+            
+            const { error } = await db.from('productos').update({ activo: false }).eq('id', id);
+            if (error) showAlert('❌ Error: ' + error.message, 'danger');
+            else {
+                showAlert('✅ Producto eliminado', 'success');
+                await cargarProductos();
+                cargarListaProductos();
+                await renderProductosVenta();
+            }
+        }
+        
+        async function cargarDashboard() {
+            // Obtener rango de fechas del filtro
+            const desde = document.getElementById('dashboardDesde').value;
+            const hasta = document.getElementById('dashboardHasta').value;
+            
+            if (!desde || !hasta) {
+                showAlert('⚠️ Selecciona un rango de fechas', 'warning');
+                return;
+            }
+            
+            // Calcular período anterior para comparación (mismo número de días)
+            const diasDiferencia = Math.ceil((new Date(hasta) - new Date(desde)) / (1000 * 60 * 60 * 24));
+            const fechaInicioAnterior = new Date(desde);
+            fechaInicioAnterior.setDate(fechaInicioAnterior.getDate() - diasDiferencia - 1);
+            const fechaFinAnterior = new Date(desde);
+            fechaFinAnterior.setDate(fechaFinAnterior.getDate() - 1);
+            
+            const primerDiaAnterior = fechaLocalISO(fechaInicioAnterior);
+            const ultimoDiaAnterior = fechaLocalISO(fechaFinAnterior);
+            
+            // Obtener ventas del período
+            const { data: ventasPeriodo } = await db
+                .from('ventas')
+                .select('*')
+                .gte('fecha', desde)
+                .lte('fecha', hasta);
+            
+            // Obtener ventas del período anterior para comparación
+            const { data: ventasPeriodoAnterior } = await db
+                .from('ventas')
+                .select('ingreso')
+                .gte('fecha', primerDiaAnterior)
+                .lte('fecha', ultimoDiaAnterior);
+            
+            // Obtener arqueos del período para POS y Pedidos Ya
+            const { data: arqueosPeriodo } = await db
+                .from('arqueos')
+                .select('*')
+                .gte('fecha', desde)
+                .lte('fecha', hasta);
+            
+            // Obtener últimos 30 días para historial
+            const hace30dias = new Date();
+            hace30dias.setDate(hace30dias.getDate() - 30);
+            const { data: ventasUltimos30 } = await db
+                .from('ventas')
+                .select('fecha, ingreso, ganancia')
+                .gte('fecha', fechaLocalISO(hace30dias))
+                .order('fecha', { ascending: true });
+            
+            if (!ventasPeriodo || ventasPeriodo.length === 0) {
+                mostrarDashboardVacio();
+                return;
+            }
+            
+            const totalAveriadosDash = ventasPeriodo.reduce((sum, v) => sum + (v.averiados || 0), 0);
+            const perdidaAveriados = ventasPeriodo.reduce((sum, v) => sum + (v.averiados || 0) * (v.costo_unitario || 0), 0);
+            
+            // Días con ventas pero sin arqueo
+            const fechasConVentas = [...new Set(ventasPeriodo.map(v => v.fecha))];
+            const fechasConArqueo = arqueosPeriodo ? new Set(arqueosPeriodo.map(a => a.fecha)) : new Set();
+            const diasSinArqueo = fechasConVentas.filter(f => !fechasConArqueo.has(f));
+            
+            // Mostrar alertas de control en dashboard
+            const alertasDash = document.getElementById('alertasDashboard');
+            let alertasHtml = '';
+            if (diasSinArqueo.length > 0) {
+                const listaFechas = diasSinArqueo.map(f => new Date(f + 'T00:00:00').toLocaleDateString('es-PY', { day: '2-digit', month: 'short' })).join(', ');
+                alertasHtml += `<div class="alert alert-danger" style="display:flex;justify-content:space-between;align-items:center;"><span>🚨 <strong>${diasSinArqueo.length} día(s) sin arqueo de caja:</strong> ${listaFechas}</span><button onclick="showTab(event, 'historial')" class="btn btn-danger" style="padding:0.4rem 1rem;font-size:0.85rem;">Ver Historial</button></div>`;
+            }
+            if (alertasDash) alertasDash.innerHTML = alertasHtml;
+            
+            // ========== CÁLCULOS PRINCIPALES ==========
+            const totalPeriodo = ventasPeriodo.reduce((sum, v) => sum + v.ingreso, 0);
+            const totalPeriodoAnterior = ventasPeriodoAnterior ? ventasPeriodoAnterior.reduce((sum, v) => sum + v.ingreso, 0) : 0;
+            const gananciaPeriodo = ventasPeriodo.reduce((sum, v) => sum + v.ganancia, 0);
+            const totalUnidades = ventasPeriodo.reduce((sum, v) => sum + v.vendidos, 0);
+            const totalProduccion = ventasPeriodo.reduce((sum, v) => sum + v.produccion, 0);
+            const totalSobrantes = ventasPeriodo.reduce((sum, v) => sum + v.sobrante, 0);
+            const totalCostos = totalPeriodo - gananciaPeriodo;
+            
+            // Cálculos de arqueos (POS, Pedidos Ya, Monchis, Gastos, Efectivo, Transferencias)
+            let totalPOS = 0;
+            let totalPedidosYa = 0;
+            let totalMonchisDash = 0;
+            let totalGastos = 0;
+            let totalGastosDetallados = 0;
+            let totalGastosHistoricos = 0;
+            let diasConGastoHistorico = 0;
+            let totalEfectivo = 0;
+            let gastosDetallePeriodo = [];
+            let totalTransferencias = 0;
+            
+            if (arqueosPeriodo) {
+                totalPOS = arqueosPeriodo.reduce((sum, a) => sum + (a.pos || 0), 0);
+                totalPedidosYa = arqueosPeriodo.reduce((sum, a) => sum + (a.pedidos_ya || 0), 0);
+                totalMonchisDash = arqueosPeriodo.reduce((sum, a) => sum + (a.monchis || 0), 0);
+                totalEfectivo = arqueosPeriodo.reduce((sum, a) => sum + (a.efectivo || 0), 0);
+                totalTransferencias = arqueosPeriodo.reduce((sum, a) => sum + (a.transferencias || 0), 0);
+
+                const arqueoIdsPeriodo = arqueosPeriodo.map(a => a.id).filter(Boolean);
+                gastosDetallePeriodo = [];
+                if (arqueoIdsPeriodo.length > 0) {
+                    const { data: gastosDetalleData, error: errorGastosDetalle } = await db
+                        .from('gastos')
+                        .select('arqueo_id, monto, concepto')
+                        .in('arqueo_id', arqueoIdsPeriodo);
+                    if (!errorGastosDetalle && gastosDetalleData) {
+                        gastosDetallePeriodo = gastosDetalleData;
+                    }
+                }
+
+                const gastoDetalladoPorArqueo = {};
+                gastosDetallePeriodo.forEach(g => {
+                    if (!gastoDetalladoPorArqueo[g.arqueo_id]) gastoDetalladoPorArqueo[g.arqueo_id] = 0;
+                    gastoDetalladoPorArqueo[g.arqueo_id] += Number(g.monto) || 0;
+                });
+
+                totalGastosDetallados = gastosDetallePeriodo.reduce((sum, g) => sum + (Number(g.monto) || 0), 0);
+                totalGastosHistoricos = arqueosPeriodo.reduce((sum, a) => {
+                    const totalArqueo = Number(a.gastos) || 0;
+                    const detallado = gastoDetalladoPorArqueo[a.id] || 0;
+                    const historico = Math.max(0, totalArqueo - detallado);
+                    if (historico > 0) diasConGastoHistorico++;
+                    return sum + historico;
+                }, 0);
+                totalGastos = totalGastosDetallados + totalGastosHistoricos;
+            }
+
+            const gastosPorNombre = {};
+            if (Array.isArray(gastosDetallePeriodo)) {
+                gastosDetallePeriodo.forEach(g => {
+                    const nombre = (g.concepto || 'Sin nombre').trim() || 'Sin nombre';
+                    if (!gastosPorNombre[nombre]) gastosPorNombre[nombre] = 0;
+                    gastosPorNombre[nombre] += Number(g.monto) || 0;
+                });
+            }
+            const rankingGastosPorNombre = Object.entries(gastosPorNombre)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 12);
+            
+            const totalPagos = totalEfectivo + totalPOS + totalPedidosYa + totalMonchisDash + totalTransferencias;
+            
+            // Días trabajados
+            const fechasUnicas = [...new Set(ventasPeriodo.map(v => v.fecha))];
+            const diasTrabajados = fechasUnicas.length;
+            const promedioDiario = diasTrabajados > 0 ? totalPeriodo / diasTrabajados : 0;
+            
+            // Mejor y peor día
+            const ventasPorDia = {};
+            ventasPeriodo.forEach(v => {
+                if (!ventasPorDia[v.fecha]) ventasPorDia[v.fecha] = 0;
+                ventasPorDia[v.fecha] += v.ingreso;
+            });
+            
+            const mejorDiaVenta = Math.max(...Object.values(ventasPorDia));
+            const peorDiaVenta = Math.min(...Object.values(ventasPorDia));
+            const fechaMejorDia = Object.keys(ventasPorDia).find(f => ventasPorDia[f] === mejorDiaVenta);
+            const fechaPeorDia = Object.keys(ventasPorDia).find(f => ventasPorDia[f] === peorDiaVenta);
+            
+            // Eficiencia
+            const eficiencia = totalProduccion > 0 ? ((totalUnidades / totalProduccion) * 100).toFixed(1) : 0;
+            
+            // Margen de ganancia
+            const margenGanancia = totalPeriodo > 0 ? ((gananciaPeriodo / totalPeriodo) * 100).toFixed(1) : 0;
+            
+            // Comparación con período anterior
+            const cambioPeriodo = totalPeriodoAnterior > 0 ? (((totalPeriodo - totalPeriodoAnterior) / totalPeriodoAnterior) * 100).toFixed(1) : 0;
+            
+            // Porcentajes de métodos de pago
+            const porcentajeEfectivo = totalPagos > 0 ? ((totalEfectivo / totalPagos) * 100).toFixed(1) : 0;
+            const porcentajeTransferencias = totalPagos > 0 ? ((totalTransferencias / totalPagos) * 100).toFixed(1) : 0;
+            const porcentajePOS = totalPagos > 0 ? ((totalPOS / totalPagos) * 100).toFixed(1) : 0;
+            const porcentajePedidosYa = totalPagos > 0 ? ((totalPedidosYa / totalPagos) * 100).toFixed(1) : 0;
+            const porcentajeMonchis = totalPagos > 0 ? ((totalMonchisDash / totalPagos) * 100).toFixed(1) : 0;
+            
+            // ========== ACTUALIZAR UI - ESTADÍSTICAS PRINCIPALES ==========
+            document.getElementById('ventaMes').textContent = `₲ ${totalPeriodo.toLocaleString()}`;
+            document.getElementById('ventaMesComparacion').textContent = cambioPeriodo > 0 
+                ? `↗ +${cambioPeriodo}% vs período anterior` 
+                : cambioPeriodo < 0 ? `↘ ${cambioPeriodo}% vs período anterior` : 'Igual que período anterior';
+            document.getElementById('ventaMesComparacion').style.color = cambioPeriodo >= 0 ? '#28a745' : '#dc3545';
+            
+            document.getElementById('gananciaMes').textContent = `₲ ${gananciaPeriodo.toLocaleString()}`;
+            document.getElementById('margenMes').textContent = `Margen: ${margenGanancia}%`;
+            
+            document.getElementById('promedioDiario').textContent = `₲ ${Math.round(promedioDiario).toLocaleString()}`;
+            document.getElementById('diasTrabajados').textContent = `${diasTrabajados} días trabajados`;
+            
+            // Métodos de pago
+            document.getElementById('totalEfectivoPagos').textContent = `₲ ${totalEfectivo.toLocaleString()}`;
+            document.getElementById('porcentajeEfectivo').textContent = `${porcentajeEfectivo}% del total`;
+            
+            document.getElementById('totalTransferenciasPagos').textContent = `₲ ${totalTransferencias.toLocaleString()}`;
+            document.getElementById('porcentajeTransferencias').textContent = `${porcentajeTransferencias}% del total`;
+            
+            document.getElementById('totalPOS').textContent = `₲ ${totalPOS.toLocaleString()}`;
+            document.getElementById('porcentajePOS').textContent = `${porcentajePOS}% del total`;
+            
+            document.getElementById('totalPedidosYa').textContent = `₲ ${totalPedidosYa.toLocaleString()}`;
+            document.getElementById('porcentajePedidosYa').textContent = `${porcentajePedidosYa}% del total`;
+            
+            document.getElementById('totalMonchis').textContent = `₲ ${totalMonchisDash.toLocaleString()}`;
+            document.getElementById('porcentajeMonchis').textContent = `${porcentajeMonchis}% del total`;
+            
+            document.getElementById('totalGastosPeriodo').textContent = `₲ ${totalGastos.toLocaleString()}`;
+            document.getElementById('totalGastosDetalladosPeriodo').textContent = `₲ ${totalGastosDetallados.toLocaleString()}`;
+            document.getElementById('totalGastosHistoricosPeriodo').textContent = `₲ ${totalGastosHistoricos.toLocaleString()}`;
+            document.getElementById('notaGastosHistoricosDashboard').textContent = totalGastosHistoricos > 0
+                ? `Hay ${diasConGastoHistorico} día(s) con gastos antiguos sin desglose en la pestaña Gastos Varios.`
+                : 'Todos los gastos del período tienen detalle en Gastos Varios.';
+
+            const listaGastosPorNombreDashboard = document.getElementById('listaGastosPorNombreDashboard');
+            if (listaGastosPorNombreDashboard) {
+                if (rankingGastosPorNombre.length === 0) {
+                    listaGastosPorNombreDashboard.innerHTML = '<div style="color: var(--text-light);">Todavía no hay gastos detallados para este período.</div>';
+                } else {
+                    const totalDet = totalGastosDetallados || 0;
+                    listaGastosPorNombreDashboard.innerHTML = `
+                        <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.75rem;">
+                            ${rankingGastosPorNombre.map(([nombre, monto]) => `
+                                <div style="background:white; padding:0.85rem 1rem; border-radius:8px; border-left:4px solid var(--primary);">
+                                    <div style="font-size:0.85rem; color:var(--text-light); margin-bottom:0.25rem;">${nombre}</div>
+                                    <div style="font-family:'JetBrains Mono', monospace; font-weight:800; color:var(--danger); font-size:1.1rem;">₲ ${monto.toLocaleString()}</div>
+                                    <div style="font-size:0.75rem; color:var(--text-light); margin-top:0.25rem;">${totalDet > 0 ? ((monto / totalDet) * 100).toFixed(1) : '0.0'}% del gasto detallado</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+            }
+            
+            // Estadísticas secundarias
+            document.getElementById('mejorDia').textContent = `₲ ${mejorDiaVenta.toLocaleString()}`;
+            document.getElementById('mejorDiaFecha').textContent = new Date(fechaMejorDia + 'T00:00:00').toLocaleDateString('es-PY', { day: '2-digit', month: 'short' });
+            
+            document.getElementById('peorDia').textContent = `₲ ${peorDiaVenta.toLocaleString()}`;
+            document.getElementById('peorDiaFecha').textContent = new Date(fechaPeorDia + 'T00:00:00').toLocaleDateString('es-PY', { day: '2-digit', month: 'short' });
+            
+            document.getElementById('totalUnidades').textContent = totalUnidades.toLocaleString();
+            
+            // Eficiencia
+            document.getElementById('totalProduccion').textContent = totalProduccion.toLocaleString();
+            document.getElementById('totalVendidos').textContent = totalUnidades.toLocaleString();
+            document.getElementById('totalSobrantes').textContent = totalSobrantes.toLocaleString();
+            document.getElementById('eficiencia').textContent = eficiencia + '%';
+            if (document.getElementById('totalAveriadosDash')) document.getElementById('totalAveriadosDash').textContent = totalAveriadosDash.toLocaleString();
+            if (document.getElementById('perdidaAveriados')) document.getElementById('perdidaAveriados').textContent = `₲ ${perdidaAveriados.toLocaleString()}`;
+            
+            // Análisis financiero
+            document.getElementById('ingresosTotal').textContent = `₲ ${totalPeriodo.toLocaleString()}`;
+            document.getElementById('costosTotal').textContent = `₲ ${totalCostos.toLocaleString()}`;
+            document.getElementById('gananciaTotal').textContent = `₲ ${gananciaPeriodo.toLocaleString()}`;
+            document.getElementById('margenGanancia').textContent = margenGanancia + '%';
+            
+            // ========== TOP 10 PRODUCTOS ==========
+            const productosSuma = {};
+            ventasPeriodo.forEach(v => {
+                if (!productosSuma[v.producto_id]) {
+                    productosSuma[v.producto_id] = { ingreso: 0, vendidos: 0, ganancia: 0, produccion: 0, sobrante: 0 };
+                }
+                productosSuma[v.producto_id].ingreso += v.ingreso;
+                productosSuma[v.producto_id].vendidos += v.vendidos;
+                productosSuma[v.producto_id].ganancia += v.ganancia;
+                productosSuma[v.producto_id].produccion += v.produccion;
+                productosSuma[v.producto_id].sobrante += v.sobrante;
+            });
+            
+            const topArray = Object.entries(productosSuma)
+                .map(([id, data]) => ({
+                    producto: productos.find(p => p.id == id),
+                    ...data,
+                    eficiencia: data.produccion > 0 ? ((data.vendidos / data.produccion) * 100).toFixed(1) : 0
+                }))
+                .filter(p => p.producto)
+                .sort((a, b) => b.ingreso - a.ingreso)
+                .slice(0, 10);
+            
+            const totalIngresoTop = topArray.reduce((sum, p) => sum + p.ingreso, 0);
+            
+            document.getElementById('topProductos').innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Producto</th>
+                            <th>Vendidos</th>
+                            <th>Ingresos</th>
+                            <th>% Total</th>
+                            <th>Ganancia</th>
+                            <th>Eficiencia</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${topArray.map((p, i) => {
+                            const porcentaje = ((p.ingreso / totalPeriodo) * 100).toFixed(1);
+                            return `
+                                <tr>
+                                    <td style="font-weight: 700;">${i + 1}</td>
+                                    <td style="font-weight: 600;">${p.producto.nombre}</td>
+                                    <td>${p.vendidos}</td>
+                                    <td style="font-weight: 600;">₲ ${p.ingreso.toLocaleString()}</td>
+                                    <td>
+                                        <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                            <div style="flex: 1; background: var(--border); height: 8px; border-radius: 4px; overflow: hidden;">
+                                                <div style="width: ${porcentaje}%; background: var(--primary); height: 100%;"></div>
+                                            </div>
+                                            <span style="font-weight: 600; font-size: 0.875rem;">${porcentaje}%</span>
+                                        </div>
+                                    </td>
+                                    <td style="color: var(--success); font-weight: 600;">₲ ${p.ganancia.toLocaleString()}</td>
+                                    <td style="font-weight: 600; color: ${p.eficiencia >= 80 ? 'var(--success)' : p.eficiencia >= 60 ? 'var(--accent)' : 'var(--danger)'};">${p.eficiencia}%</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+            
+            // ========== VENTAS POR CATEGORÍA ==========
+            const ventasPorCat = {};
+            ventasPeriodo.forEach(v => {
+                const prod = productos.find(p => p.id === v.producto_id);
+                if (prod) {
+                    const cat = prod.categoria;
+                    if (!ventasPorCat[cat]) {
+                        ventasPorCat[cat] = { ingreso: 0, vendidos: 0, ganancia: 0 };
+                    }
+                    ventasPorCat[cat].ingreso += v.ingreso;
+                    ventasPorCat[cat].vendidos += v.vendidos;
+                    ventasPorCat[cat].ganancia += v.ganancia;
+                }
+            });
+            
+            document.getElementById('ventasPorCategoria').innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                    ${Object.entries(ventasPorCat).sort((a, b) => b[1].ingreso - a[1].ingreso).map(([cat, data]) => {
+                        const porcentaje = ((data.ingreso / totalPeriodo) * 100).toFixed(1);
+                        return `
+                            <div style="background: var(--bg-main); padding: 1rem; border-radius: 8px;">
+                                <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 0.5rem;">${cat}</div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--primary); font-size: 1.25rem; margin-bottom: 0.5rem;">₲ ${data.ingreso.toLocaleString()}</div>
+                                <div style="font-size: 0.875rem; color: var(--text-light); margin-bottom: 0.25rem;">${data.vendidos} unidades</div>
+                                <div style="font-size: 0.875rem; color: var(--success); font-weight: 600;">Ganancia: ₲ ${data.ganancia.toLocaleString()}</div>
+                                <div style="background: var(--border); height: 6px; border-radius: 3px; margin-top: 0.5rem; overflow: hidden;">
+                                    <div style="width: ${porcentaje}%; background: var(--primary); height: 100%;"></div>
+                                </div>
+                                <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem; text-align: right;">${porcentaje}% del total</div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            // ========== VENTAS POR DÍA DE LA SEMANA ==========
+            const diasSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+            const ventasPorDiaSemana = {};
+            
+            ventasPeriodo.forEach(v => {
+                const diaSemana = new Date(v.fecha + 'T00:00:00').getDay();
+                if (!ventasPorDiaSemana[diaSemana]) {
+                    ventasPorDiaSemana[diaSemana] = { ingreso: 0, dias: 0 };
+                }
+                ventasPorDiaSemana[diaSemana].ingreso += v.ingreso;
+            });
+            
+            fechasUnicas.forEach(fecha => {
+                const diaSemana = new Date(fecha + 'T00:00:00').getDay();
+                if (ventasPorDiaSemana[diaSemana]) {
+                    ventasPorDiaSemana[diaSemana].dias++;
+                }
+            });
+            
+            const maxVentaDia = Math.max(...Object.values(ventasPorDiaSemana).map(d => d.dias > 0 ? d.ingreso / d.dias : 0));
+            
+            document.getElementById('ventasPorDiaSemana').innerHTML = `
+                <div style="margin-top: 1rem;">
+                    ${diasSemana.map((dia, index) => {
+                        const data = ventasPorDiaSemana[index];
+                        const promedio = data && data.dias > 0 ? data.ingreso / data.dias : 0;
+                        const porcentaje = maxVentaDia > 0 ? (promedio / maxVentaDia) * 100 : 0;
+                        
+                        return `
+                            <div style="display: flex; align-items: center; gap: 1rem; padding: 0.75rem; background: var(--bg-main); border-radius: 6px; margin-bottom: 0.5rem;">
+                                <div style="min-width: 100px; font-weight: 600;">${dia}</div>
+                                <div style="flex: 1; background: var(--border); height: 24px; border-radius: 4px; overflow: hidden;">
+                                    <div style="width: ${porcentaje}%; background: ${porcentaje >= 80 ? 'var(--success)' : porcentaje >= 50 ? 'var(--primary)' : 'var(--accent)'}; height: 100%; display: flex; align-items: center; justify-content: center; color: white; font-size: 0.875rem; font-weight: 600;">
+                                        ${promedio > 0 ? '₲ ' + Math.round(promedio).toLocaleString() : ''}
+                                    </div>
+                                </div>
+                                <div style="min-width: 60px; text-align: right; font-size: 0.875rem; color: var(--text-light);">
+                                    ${data ? data.dias + ' días' : 'No hay datos'}
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            
+            // ========== PRODUCTOS CON MÁS SOBRANTES ==========
+            const productosSobrantesArray = topArray
+                .filter(p => p.sobrante > 0)
+                .sort((a, b) => b.sobrante - a.sobrante)
+                .slice(0, 5);
+            
+            if (productosSobrantesArray.length > 0) {
+                document.getElementById('productosSobrantes').innerHTML = `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Producido</th>
+                                <th>Vendidos</th>
+                                <th>Sobrantes</th>
+                                <th>% Desperdicio</th>
+                                <th>Pérdida Estimada</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${productosSobrantesArray.map(p => {
+                                const porcentajeDesperdicio = ((p.sobrante / p.produccion) * 100).toFixed(1);
+                                const perdida = p.sobrante * p.producto.costo_unitario;
+                                return `
+                                    <tr>
+                                        <td style="font-weight: 600;">${p.producto.nombre}</td>
+                                        <td>${p.produccion}</td>
+                                        <td style="color: var(--success); font-weight: 600;">${p.vendidos}</td>
+                                        <td style="color: var(--danger); font-weight: 600;">${p.sobrante}</td>
+                                        <td style="font-weight: 600; color: ${porcentajeDesperdicio >= 30 ? 'var(--danger)' : porcentajeDesperdicio >= 15 ? 'var(--accent)' : 'var(--text-light)'};">${porcentajeDesperdicio}%</td>
+                                        <td style="color: var(--danger); font-weight: 600;">₲ ${perdida.toLocaleString()}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                document.getElementById('productosSobrantes').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">¡Excelente! No hay desperdicios significativos</p>';
+            }
+            
+            // ========== HISTORIAL DE VENTAS (Últimos 30 días) ==========
+            if (ventasUltimos30 && ventasUltimos30.length > 0) {
+                const ventasPorDiaHistorial = {};
+                ventasUltimos30.forEach(v => {
+                    if (!ventasPorDiaHistorial[v.fecha]) {
+                        ventasPorDiaHistorial[v.fecha] = { ingreso: 0, ganancia: 0 };
+                    }
+                    ventasPorDiaHistorial[v.fecha].ingreso += v.ingreso;
+                    ventasPorDiaHistorial[v.fecha].ganancia += v.ganancia;
+                });
+                
+                const maxIngresoHistorial = Math.max(...Object.values(ventasPorDiaHistorial).map(d => d.ingreso));
+                
+                document.getElementById('historialVentas').innerHTML = `
+                    <div style="margin-top: 1rem;">
+                        ${Object.entries(ventasPorDiaHistorial).reverse().map(([fecha, data]) => {
+                            const porcentaje = (data.ingreso / maxIngresoHistorial) * 100;
+                            const fechaFormateada = new Date(fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short' });
+                            
+                            return `
+                                <div style="display: flex; align-items: center; gap: 1rem; padding: 0.5rem; border-bottom: 1px solid var(--border);">
+                                    <div style="min-width: 120px; font-size: 0.875rem;">${fechaFormateada}</div>
+                                    <div style="flex: 1; background: var(--border); height: 20px; border-radius: 4px; overflow: hidden;">
+                                        <div style="width: ${porcentaje}%; background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%); height: 100%;"></div>
+                                    </div>
+                                    <div style="min-width: 120px; text-align: right; font-family: 'JetBrains Mono', monospace; font-weight: 600;">₲ ${data.ingreso.toLocaleString()}</div>
+                                    <div style="min-width: 100px; text-align: right; font-size: 0.875rem; color: var(--success); font-weight: 600;">+₲ ${data.ganancia.toLocaleString()}</div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+            }
+        }
+        
+        function rangoMesActual() {
+            const hoy = new Date();
+            const primerDia = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+            const ultimoDia = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+            
+            document.getElementById('dashboardDesde').value = fechaLocalISO(primerDia);
+            document.getElementById('dashboardHasta').value = fechaLocalISO(ultimoDia);
+            
+            cargarDashboard();
+        }
+        
+        function rangoUltimos7Dias() {
+            const hoy = new Date();
+            const hace7dias = new Date();
+            hace7dias.setDate(hace7dias.getDate() - 7);
+            
+            document.getElementById('dashboardDesde').value = fechaLocalISO(hace7dias);
+            document.getElementById('dashboardHasta').value = fechaLocalISO(hoy);
+            
+            cargarDashboard();
+        }
+        
+        function rangoUltimos30Dias() {
+            const hoy = new Date();
+            const hace30dias = new Date();
+            hace30dias.setDate(hace30dias.getDate() - 30);
+            
+            document.getElementById('dashboardDesde').value = fechaLocalISO(hace30dias);
+            document.getElementById('dashboardHasta').value = fechaLocalISO(hoy);
+            
+            cargarDashboard();
+        }
+        
+        function mostrarDashboardVacio() {
+            document.getElementById('ventaMes').textContent = '₲ 0';
+            document.getElementById('gananciaMes').textContent = '₲ 0';
+            document.getElementById('promedioDiario').textContent = '₲ 0';
+            const totalGastosPeriodoEl = document.getElementById('totalGastosPeriodo');
+            const totalGastosDetalladosEl = document.getElementById('totalGastosDetalladosPeriodo');
+            const totalGastosHistoricosEl = document.getElementById('totalGastosHistoricosPeriodo');
+            const notaGastosHistoricosEl = document.getElementById('notaGastosHistoricosDashboard');
+            if (totalGastosPeriodoEl) totalGastosPeriodoEl.textContent = '₲ 0';
+            if (totalGastosDetalladosEl) totalGastosDetalladosEl.textContent = '₲ 0';
+            if (totalGastosHistoricosEl) totalGastosHistoricosEl.textContent = '₲ 0';
+            if (notaGastosHistoricosEl) notaGastosHistoricosEl.textContent = '';
+            const listaGastosPorNombreDashboardEl = document.getElementById('listaGastosPorNombreDashboard');
+            if (listaGastosPorNombreDashboardEl) listaGastosPorNombreDashboardEl.innerHTML = 'Todavía no hay gastos detallados para este período.';
+            document.getElementById('topProductos').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay datos del mes actual</p>';
+        }
+
+        // ===== GASTOS VARIOS =====
+        async function cargarGastosVarios() {
+            const desde = document.getElementById('gastosDesde').value;
+            const hasta = document.getElementById('gastosHasta').value;
+
+            if (!desde || !hasta) {
+                showAlert('⚠️ Seleccioná un rango de fechas', 'warning');
+                return;
+            }
+
+            // Obtener arqueos del período para conseguir sus IDs y fechas
+            const { data: arqueos } = await db
+                .from('arqueos')
+                .select('id, fecha')
+                .gte('fecha', desde)
+                .lte('fecha', hasta)
+                .order('fecha', { ascending: false });
+
+            if (!arqueos || arqueos.length === 0) {
+                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay arqueos registrados en este período</p>';
+                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
+                return;
+            }
+
+            const arqueoIds = arqueos.map(a => a.id);
+            const arqueoFechaMap = {};
+            arqueos.forEach(a => arqueoFechaMap[a.id] = a.fecha);
+
+            // Obtener todos los gastos de esos arqueos
+            const { data: gastosData } = await db
+                .from('gastos')
+                .select('*')
+                .in('arqueo_id', arqueoIds);
+
+            if (!gastosData || gastosData.length === 0) {
+                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
+                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
+                return;
+            }
+
+            // Agregar fecha a cada gasto y ordenar por fecha descendente
+            const gastosConFecha = gastosData
+                .map(g => ({ ...g, fecha: arqueoFechaMap[g.arqueo_id] }))
+                .filter(g => g.fecha) // descartar gastos sin fecha válida
+                .sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+            if (gastosConFecha.length === 0) {
+                document.getElementById('listaGastosVarios').innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 2rem;">No hay gastos registrados en este período</p>';
+                document.getElementById('resumenGastosPorCategoria').innerHTML = '';
+                document.getElementById('resumenGastosPorConcepto').innerHTML = '';
+                return;
+            }
+
+            // Totales por categoría
+            const porCategoria = {};
+            gastosConFecha.forEach(g => {
+                const key = g.categoria || 'Otros';
+                if (!porCategoria[key]) porCategoria[key] = 0;
+                porCategoria[key] += g.monto;
+            });
+            const totalGastosPeriodo = gastosConFecha.reduce((s, g) => s + g.monto, 0);
+            const porConcepto = {};
+            gastosConFecha.forEach(g => {
+                const key = (g.concepto || 'Sin nombre').trim() || 'Sin nombre';
+                if (!porConcepto[key]) porConcepto[key] = 0;
+                porConcepto[key] += g.monto;
+            });
+
+            // Render resumen por categoría
+            document.getElementById('resumenGastosPorCategoria').innerHTML = `
+                <div style="background: var(--bg-main); padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: var(--secondary);">📊 Resumen por Categoría</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; margin-bottom: 1rem;">
+                        ${Object.entries(porCategoria).sort((a, b) => b[1] - a[1]).map(([categoria, monto]) => `
+                            <div style="background: white; padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--danger);">
+                                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">💸 ${categoria}</div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.1rem;">₲ ${monto.toLocaleString()}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">${((monto / totalGastosPeriodo) * 100).toFixed(1)}% del total</div>
+                                <div style="background: var(--border); height: 4px; border-radius: 2px; margin-top: 0.5rem; overflow: hidden;">
+                                    <div style="width: ${((monto / totalGastosPeriodo) * 100).toFixed(1)}%; background: var(--danger); height: 100%;"></div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="padding: 0.75rem 1rem; background: white; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--secondary);">
+                        <span style="font-weight: 700;">Total de Gastos Detallados:</span>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 1.25rem; color: var(--danger);">₲ ${totalGastosPeriodo.toLocaleString()}</span>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('resumenGastosPorConcepto').innerHTML = `
+                <div style="background: var(--bg-main); padding: 1.25rem; border-radius: 8px; margin-bottom: 1rem;">
+                    <div style="font-weight: 700; font-size: 1.1rem; margin-bottom: 1rem; color: var(--secondary);">👤 Resumen por Nombre / Concepto</div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem;">
+                        ${Object.entries(porConcepto).sort((a, b) => b[1] - a[1]).map(([concepto, monto]) => `
+                            <div style="background: white; padding: 0.75rem 1rem; border-radius: 6px; border-left: 4px solid var(--primary);">
+                                <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.25rem;">${concepto}</div>
+                                <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger); font-size: 1.1rem;">₲ ${monto.toLocaleString()}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-light); margin-top: 0.25rem;">${((monto / totalGastosPeriodo) * 100).toFixed(1)}% del total detallado</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+
+            // Render tabla detallada
+            document.getElementById('listaGastosVarios').innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Categoría</th>
+                            <th>Concepto</th>
+                            <th>Monto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${gastosConFecha.map(g => `
+                            <tr>
+                                <td style="font-weight: 600;">${new Date(g.fecha + 'T00:00:00').toLocaleDateString('es-PY', { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                                <td>${g.categoria || 'Otros'}</td>
+                                <td>${g.concepto}</td>
+                                <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--danger);">₲ ${g.monto.toLocaleString()}</td>
+                            </tr>
+                        `).join('')}
+                        <tr style="background: var(--bg-main); font-weight: 700;">
+                            <td colspan="3" style="text-align: right; padding-right: 1rem;">TOTAL DETALLADO:</td>
+                            <td style="font-family: 'JetBrains Mono', monospace; color: var(--danger); font-size: 1.1rem;">₲ ${totalGastosPeriodo.toLocaleString()}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+        }
+    </script>
+</body>
+</html>
