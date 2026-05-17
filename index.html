@@ -2103,10 +2103,10 @@
         function limpiarFormularioVentas() {
             productos.forEach(p => {
                 document.getElementById(`sobrant_ant_${p.id}`).value = 0;
-                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = '';
                 document.getElementById(`prod_${p.id}`).value = 0;
-                document.getElementById(`aver_${p.id}`).value = 0;
-                document.getElementById(`sobr_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = '';
+                document.getElementById(`sobr_${p.id}`).value = '';
             });
             calcularResumen();
             
@@ -2118,10 +2118,10 @@
             // Limpiar primero
             productos.forEach(p => {
                 document.getElementById(`sobrant_ant_${p.id}`).value = 0;
-                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = '';
                 document.getElementById(`prod_${p.id}`).value = 0;
-                document.getElementById(`aver_${p.id}`).value = 0;
-                document.getElementById(`sobr_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = '';
+                document.getElementById(`sobr_${p.id}`).value = '';
             });
             
             // Cargar los datos guardados
@@ -2133,8 +2133,8 @@
                 const sobrInput = document.getElementById(`sobr_${v.producto_id}`);
                 
                 if (prodInput) prodInput.value = v.produccion;
-                if (averInput) averInput.value = v.averiados || 0;
-                if (sobrInput) sobrInput.value = v.sobrante;
+                if (averInput) averInput.value = (v.averiados && v.averiados !== 0) ? v.averiados : '';
+                if (sobrInput) sobrInput.value = (v.sobrante !== null && v.sobrante !== undefined && v.sobrante !== 0) ? v.sobrante : '';
                 
                 // Calcular cuánto fue sobrante anterior vs producido hoy
                 // Si los datos tienen produccion_nueva guardada, usarla; sino asumir que toda la producción fue nueva
@@ -2157,10 +2157,10 @@
             // Limpiar primero
             productos.forEach(p => {
                 document.getElementById(`sobrant_ant_${p.id}`).value = 0;
-                document.getElementById(`prod_hoy_${p.id}`).value = 0;
+                document.getElementById(`prod_hoy_${p.id}`).value = '';
                 document.getElementById(`prod_${p.id}`).value = 0;
-                document.getElementById(`aver_${p.id}`).value = 0;
-                document.getElementById(`sobr_${p.id}`).value = 0;
+                document.getElementById(`aver_${p.id}`).value = '';
+                document.getElementById(`sobr_${p.id}`).value = '';
             });
             
             let totalSobrantes = 0;
@@ -2242,31 +2242,31 @@
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Sobrante Ant.</label>
-                        <input type="number" id="sobrant_ant_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;">
+                        <input type="number" id="sobrant_ant_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;" onwheel="event.preventDefault()">
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Producido Hoy</label>
-                        <input type="number" id="prod_hoy_${p.id}" class="form-input" value="0" onchange="calcularProduccionTotal(${p.id})" onkeydown="handleEnterVentas(event, 'prod_hoy_${p.id}')">
+                        <input type="number" id="prod_hoy_${p.id}" class="form-input" value="" placeholder="0" onchange="calcularProduccionTotal(${p.id})" onkeydown="handleEnterVentas(event, 'prod_hoy_${p.id}')" onwheel="event.preventDefault()">
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Total Producción</label>
-                        <input type="number" id="prod_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;">
-                    </div>
-                    <div class="form-group" style="margin: 0;">
-                        <label class="form-label" style="font-size: 0.75rem;">Averiados</label>
-                        <input type="number" id="aver_${p.id}" class="form-input" value="0" onchange="calcularResumen()" onkeydown="handleEnterVentas(event, 'aver_${p.id}')" style="background: #fff3cd;">
+                        <input type="number" id="prod_${p.id}" class="form-input" value="0" readonly style="background: #e9ecef; font-weight: 600;" onwheel="event.preventDefault()">
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Sobrante Hoy</label>
-                        <input type="number" id="sobr_${p.id}" class="form-input" value="0" onchange="calcularResumen()" onkeydown="handleEnterVentas(event, 'sobr_${p.id}')">
+                        <input type="number" id="sobr_${p.id}" class="form-input" value="" placeholder="0" onchange="calcularResumen()" onkeydown="handleEnterVentas(event, 'sobr_${p.id}')" onwheel="event.preventDefault()">
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Vendidos</label>
-                        <input type="number" id="vend_${p.id}" class="form-input" value="0" readonly style="background: #f8f9fa; font-weight: 600; color: var(--primary);">
+                        <input type="number" id="vend_${p.id}" class="form-input" value="0" readonly style="background: #f8f9fa; font-weight: 600; color: var(--primary);" onwheel="event.preventDefault()">
                     </div>
                     <div class="form-group" style="margin: 0;">
                         <label class="form-label" style="font-size: 0.75rem;">Ingreso</label>
                         <div style="font-family: 'JetBrains Mono', monospace; font-weight: 700; padding: 0.5rem; color: var(--success);" id="ingr_${p.id}">₲ 0</div>
+                    </div>
+                    <div class="form-group" style="margin: 0;">
+                        <label class="form-label" style="font-size: 0.75rem;">🔧 Averiados</label>
+                        <input type="number" id="aver_${p.id}" class="form-input" value="" placeholder="0" onchange="calcularResumen()" onkeydown="handleEnterVentas(event, 'aver_${p.id}')" style="background: #fff3cd;" onwheel="event.preventDefault()">
                     </div>
                 </div>
             `).join('');
@@ -2291,11 +2291,11 @@
                 
                 productRows.forEach(row => {
                     const prodHoyInput = row.querySelector('[id^="prod_hoy_"]');
-                    const averInput = row.querySelector('[id^="aver_"]');
                     const sobrInput = row.querySelector('[id^="sobr_"]:not([id*="_ant_"])');
+                    const averInput = row.querySelector('[id^="aver_"]');
                     if (prodHoyInput) orden.push(prodHoyInput.id);
-                    if (averInput) orden.push(averInput.id);
                     if (sobrInput) orden.push(sobrInput.id);
+                    if (averInput) orden.push(averInput.id);
                 });
                 
                 const currentIndex = orden.indexOf(currentId);
