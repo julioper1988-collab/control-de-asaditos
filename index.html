@@ -1409,18 +1409,31 @@
             }
         }
         
+        async function fetchTodo(buildQuery) {
+            const PAGE = 1000;
+            let from = 0, acc = [];
+            for (;;) {
+                const { data, error } = await buildQuery().range(from, from + PAGE - 1);
+                if (error) return { data: acc, error };
+                acc = acc.concat(data || []);
+                if (!data || data.length < PAGE) break;
+                from += PAGE;
+            }
+            return { data: acc, error: null };
+        }
+
         async function cargarVentasPorDia() {
             const desde = document.getElementById('vdiaDesde').value;
             const hasta = document.getElementById('vdiaHasta').value;
             const cont = document.getElementById('ventasPorDiaContenido');
             if (!desde || !hasta) { showAlert('⚠️ Selecciona un rango de fechas', 'warning'); return; }
 
-            const { data: ventas, error } = await db
+            const { data: ventas, error } = await fetchTodo(() => db
                 .from('ventas')
-                .select('fecha, producto_id, vendidos, ingreso, ganancia')
+                .select('fecha, producto_id, vendidos, ingreso, ganancia, nombre_producto')
                 .gte('fecha', desde)
                 .lte('fecha', hasta)
-                .order('fecha', { ascending: false });
+                .order('fecha', { ascending: false }));
 
             if (error) { cont.innerHTML = '<p style="color:var(--danger);">Error: ' + error.message + '</p>'; return; }
             if (!ventas || !ventas.length) { cont.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:1rem;">No hay ventas en este rango.</p>'; return; }
@@ -1455,7 +1468,7 @@
                     + '<th style="padding:0.4rem 0.3rem;text-align:right;">Vend.</th>'
                     + '<th style="padding:0.4rem 0.3rem;text-align:right;">Ingreso</th></tr></thead><tbody>';
                 filas.forEach(v => {
-                    const nom = nombreProd[v.producto_id] || ('Producto #' + v.producto_id);
+                    const nom = v.nombre_producto || nombreProd[v.producto_id] || ('Producto #' + v.producto_id);
                     html += '<tr style="border-bottom:1px solid var(--border);">'
                         + '<td style="padding:0.4rem 0.3rem;">' + nom + '</td>'
                         + '<td style="padding:0.4rem 0.3rem;text-align:right;font-weight:600;">' + (v.vendidos || 0) + '</td>'
@@ -1482,12 +1495,12 @@
             }
             
             // Obtener ventas
-            const { data: ventas } = await db
+            const { data: ventas } = await fetchTodo(() => db
                 .from('ventas')
                 .select('*')
                 .gte('fecha', desde)
                 .lte('fecha', hasta)
-                .order('fecha', { ascending: false });
+                .order('fecha', { ascending: false }));
             
             // Obtener arqueos
             const { data: arqueos } = await db
@@ -1939,6 +1952,7 @@
                 const ventasNuevas = ventasOrigen.map(v => ({
                     fecha: nuevaFecha,
                     producto_id: v.producto_id,
+                    nombre_producto: v.nombre_producto,
                     sobrante_anterior: v.sobrante_anterior,
                     produccion_nueva: v.produccion_nueva,
                     produccion: v.produccion,
@@ -2674,6 +2688,7 @@
                     }
                     ventas.push({
                         fecha, producto_id: p.id, 
+                        nombre_producto: p.nombre,
                         sobrante_anterior: sobranteAnterior,
                         produccion_nueva: producidoHoy,
                         produccion, averiados, sobrante, vendidos,
@@ -3350,18 +3365,18 @@
             const ultimoDiaAnterior = fechaLocalISO(fechaFinAnterior);
             
             // Obtener ventas del período
-            const { data: ventasPeriodo } = await db
+            const { data: ventasPeriodo } = await fetchTodo(() => db
                 .from('ventas')
                 .select('*')
                 .gte('fecha', desde)
-                .lte('fecha', hasta);
+                .lte('fecha', hasta));
             
             // Obtener ventas del período anterior para comparación
-            const { data: ventasPeriodoAnterior } = await db
+            const { data: ventasPeriodoAnterior } = await fetchTodo(() => db
                 .from('ventas')
                 .select('ingreso')
                 .gte('fecha', primerDiaAnterior)
-                .lte('fecha', ultimoDiaAnterior);
+                .lte('fecha', ultimoDiaAnterior));
             
             // Obtener arqueos del período para POS y Pedidos Ya
             const { data: arqueosPeriodo } = await db
@@ -3373,11 +3388,11 @@
             // Obtener últimos 30 días para historial
             const hace30dias = new Date();
             hace30dias.setDate(hace30dias.getDate() - 30);
-            const { data: ventasUltimos30 } = await db
+            const { data: ventasUltimos30 } = await fetchTodo(() => db
                 .from('ventas')
                 .select('fecha, ingreso, ganancia')
                 .gte('fecha', fechaLocalISO(hace30dias))
-                .order('fecha', { ascending: true });
+                .order('fecha', { ascending: true }));
             
             if (!ventasPeriodo || ventasPeriodo.length === 0) {
                 mostrarDashboardVacio();
