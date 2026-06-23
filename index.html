@@ -2526,6 +2526,51 @@
             renderListaSimple();
         }
 
+        function normalizarTxt(s) {
+            return (s || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim();
+        }
+        function bigramsNL(s) {
+            const r = [];
+            for (let i = 0; i < s.length - 1; i++) r.push(s.slice(i, i + 2));
+            return r;
+        }
+        function diceNL(a, b) {
+            if (a === b) return 1;
+            if (a.length < 2 || b.length < 2) return 0;
+            const ba = bigramsNL(a), bb = bigramsNL(b), map = {};
+            ba.forEach(g => map[g] = (map[g] || 0) + 1);
+            let inter = 0;
+            bb.forEach(g => { if (map[g] > 0) { inter++; map[g]--; } });
+            return (2 * inter) / (ba.length + bb.length);
+        }
+        const NL_STOP = ['sobro','sobra','sobrante','sobraron','sobrantes','averiado','averiados','averia','averias','averiada','unidad','unidades','y','de','del','la','el','con','hoy','quedo','quedaron'];
+        function scoreProductoNL(nombreNorm, tokensFrase) {
+            const palabras = nombreNorm.split(' ');
+            const nombrePlano = nombreNorm.replace(/\s+/g, '');
+            let best = 0;
+            tokensFrase.forEach(tok => {
+                if (tok.length >= 3 && (tok.includes(nombrePlano) || nombrePlano.includes(tok))) best = Math.max(best, 0.95);
+                best = Math.max(best, diceNL(tok, nombrePlano));
+                palabras.forEach(pal => {
+                    if (pal.length < 3) return;
+                    if (tok.includes(pal) || pal.includes(tok)) best = Math.max(best, 0.9);
+                    best = Math.max(best, diceNL(tok, pal));
+                });
+            });
+            return best;
+        }
+        function buscarProductoNL(frase) {
+            const norm = normalizarTxt(frase);
+            const tokens = norm.split(' ').filter(t => t && !/^\d+$/.test(t) && NL_STOP.indexOf(t) === -1);
+            const ranked = productos.map(p => ({ p, score: scoreProductoNL(normalizarTxt(p.nombre), tokens) }))
+                .sort((a, b) => b.score - a.score);
+            const top = ranked[0];
+            const UMBRAL = 0.55;
+            if (top && top.score >= UMBRAL) return { producto: top.p, score: top.score, sugerencias: [] };
+            const sug = ranked.filter(r => r.score >= 0.3).slice(0, 3).map(r => r.p.nombre);
+            return { producto: null, score: top ? top.score : 0, sugerencias: sug };
+        }
+
         function parseFraseVenta(txt) {
             const t = txt.toLowerCase();
             const nums = (t.match(/\d+/g) || []).map(Number);
@@ -2551,9 +2596,13 @@
             const msg = document.getElementById('nlVentaMsg');
             const txt = (inp.value || '').trim();
             if (!txt) return;
-            const t = txt.toLowerCase();
-            const p = productos.find(x => t.includes(x.nombre.toLowerCase()));
-            if (!p) { msg.style.color = 'var(--danger)'; msg.textContent = 'No reconocí el producto.'; return; }
+            const r = buscarProductoNL(txt);
+            const p = r.producto;
+            if (!p) {
+                msg.style.color = 'var(--danger)';
+                msg.textContent = r.sugerencias.length ? ('¿Quisiste decir: ' + r.sugerencias.join(', ') + '?') : 'No reconocí el producto.';
+                return;
+            }
             const v = parseFraseVenta(txt);
             document.getElementById('prod_hoy_' + p.id).value = v.prod;
             document.getElementById('sobr_' + p.id).value = v.sobr;
