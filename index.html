@@ -168,6 +168,10 @@
             border-color: var(--primary);
             box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
         }
+
+        input[type=number]::-webkit-outer-spin-button,
+        input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; appearance: textfield; }
         
         .btn {
             padding: 0.75rem 1.5rem;
@@ -449,6 +453,7 @@
         <button class="nav-tab" onclick="showTab(event, 'catalogo')">📦 Catálogo</button>
         <button class="nav-tab" onclick="showTab(event, 'dashboard')">📊 Dashboard</button>
         <button class="nav-tab" onclick="showTab(event, 'historial')">📋 Historial</button>
+        <button class="nav-tab" onclick="showTab(event, 'ventasdia')">📦 Ventas x Día</button>
         <button class="nav-tab" onclick="showTab(event, 'gastos')">💸 Gastos Varios</button>
     </div>
     
@@ -461,6 +466,7 @@
             <option value="catalogo">📦 Catálogo</option>
             <option value="dashboard">📊 Dashboard</option>
             <option value="historial">📋 Historial</option>
+            <option value="ventasdia">📦 Ventas x Día</option>
             <option value="gastos">💸 Gastos Varios</option>
         </select>
     </div>
@@ -480,6 +486,45 @@
                 
                 <div id="alertSobrantes" class="hidden"></div>
                 
+                <div class="form-group" style="margin-bottom:0.75rem;">
+                    <input type="text" id="buscarProductoVenta" class="form-input" placeholder="🔍 Buscar producto..." oninput="filtrarProductosVenta()" autocomplete="off">
+                    <div id="contadorProductosVenta" style="font-size:0.75rem; color:var(--text-light); margin-top:0.25rem;"></div>
+                </div>
+                <div style="margin-bottom:0.75rem;">
+                    <button type="button" id="btnVistaCarga" onclick="toggleVistaCarga()" class="btn btn-secondary" style="width:auto;">📋 Vista simple</button>
+                </div>
+                <div id="nlVentaWrap" style="display:none; margin-bottom:0.75rem;">
+                    <label class="form-label">Carga rápida (lenguaje natural)</label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <input type="text" id="nlVenta" class="form-input" placeholder="ej: 20 chorizo sobró 3 1 averiado" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();aplicarNLVenta();}">
+                        <button type="button" class="btn btn-success" onclick="aplicarNLVenta()" style="width:auto; flex:0 0 auto;">✓</button>
+                    </div>
+                    <div id="nlVentaMsg" style="font-size:0.8rem; margin-top:0.25rem; min-height:1rem;"></div>
+                </div>
+                <div id="listaSimple" style="display:none; flex-direction:column; gap:0.5rem; margin-bottom:0.75rem;"></div>
+                <div id="sheetVentaOverlay" onclick="if(event.target===this)cerrarSheetProducto()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); z-index:9999; align-items:flex-end; justify-content:center;">
+                    <div style="background:var(--bg-card); color:var(--text-dark); width:100%; max-width:600px; border-radius:16px 16px 0 0; padding:1.25rem; max-height:90vh; overflow:auto;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+                            <strong id="sheetTitulo" style="font-size:1.1rem;">Producto</strong>
+                            <button type="button" class="btn btn-secondary" onclick="cerrarSheetProducto()" style="width:auto; padding:0.25rem 0.7rem;">✕</button>
+                        </div>
+                        <div class="grid grid-2" style="gap:0.75rem;">
+                            <div class="form-group" style="margin:0;"><label class="form-label">Sobrante Ant.</label><input type="number" id="sheetSant" class="form-input" readonly style="background:#e9ecef;"></div>
+                            <div class="form-group" style="margin:0;"><label class="form-label">Producido Hoy</label><input type="number" id="sheetProd" class="form-input" placeholder="0" oninput="calcSheet()"></div>
+                            <div class="form-group" style="margin:0;"><label class="form-label">Sobrante Hoy</label><input type="number" id="sheetSobr" class="form-input" placeholder="0" oninput="calcSheet()"></div>
+                            <div class="form-group" style="margin:0;"><label class="form-label">🔧 Averiados</label><input type="number" id="sheetAver" class="form-input" placeholder="0" style="background:#fff3cd;" oninput="calcSheet()"></div>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin:1rem 0; font-size:0.95rem;">
+                            <span>Vendidos: <strong id="sheetVend">0</strong></span>
+                            <span>Ingreso: <strong id="sheetIng" style="color:var(--success);">₲ 0</strong></span>
+                        </div>
+                        <div class="form-group" style="margin:0 0 0.75rem;">
+                            <label class="form-label">Carga rápida</label>
+                            <input type="text" id="sheetNL" class="form-input" placeholder="ej: 20 sobró 3 1 averiado" autocomplete="off" onkeydown="if(event.key==='Enter'){event.preventDefault();aplicarNLSheet();}">
+                        </div>
+                        <button type="button" class="btn btn-success" onclick="guardarSheetProducto()" style="width:100%;">✓ Guardar producto</button>
+                    </div>
+                </div>
                 <div id="productosVenta"></div>
                 
                 <button onclick="guardarVentas()" class="btn btn-success">💾 Guardar Ventas del Día</button>
@@ -515,7 +560,7 @@
                 <div class="grid grid-2">
                     <div class="form-group">
                         <label class="form-label">Fecha del Arqueo</label>
-                        <input type="date" id="arqueoFecha" class="form-input" onchange="cargarVentaDelDia()">
+                        <input type="date" id="arqueoFecha" class="form-input" onchange="cargarVentaDelDia()" disabled title="La fecha sigue a Carga Diaria">
                     </div>
                     
                     <div class="form-group">
@@ -929,6 +974,24 @@
         </div>
 
         <!-- TAB: GASTOS VARIOS -->
+        <div id="tab-ventasdia" class="tab-content">
+            <div class="card">
+                <div class="card-header">📦 Ventas por Día</div>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label class="form-label">Desde</label>
+                        <input type="date" id="vdiaDesde" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hasta</label>
+                        <input type="date" id="vdiaHasta" class="form-input">
+                    </div>
+                </div>
+                <button onclick="cargarVentasPorDia()" class="btn btn-success">🔍 Buscar</button>
+                <div id="ventasPorDiaContenido" style="margin-top:1rem;"></div>
+            </div>
+        </div>
+        
         <div id="tab-gastos" class="tab-content">
             <div class="card">
                 <div class="card-header">🍽️ Historial de Cenas / Gastos por Persona</div>
@@ -1078,6 +1141,7 @@
 
                 await cargarProductos();
                 await renderProductosVenta();
+                if (typeof renderListaSimple === 'function') renderListaSimple();
                 renderDenominaciones();
                 renderGastos();
 
@@ -1321,6 +1385,14 @@
             else if (tabName === 'catalogo') cargarListaProductos();
             else if (tabName === 'arqueo') cargarVentaDelDia();
             else if (tabName === 'historial') cargarHistorial();
+            else if (tabName === 'ventasdia') {
+                const d = document.getElementById('vdiaDesde'), h = document.getElementById('vdiaHasta');
+                if (!d.value || !h.value) {
+                    const hoy = new Date(); const hace7 = new Date(); hace7.setDate(hoy.getDate() - 7);
+                    d.value = fechaLocalISO(hace7); h.value = fechaLocalISO(hoy);
+                }
+                cargarVentasPorDia();
+            }
             else if (tabName === 'inventario') cargarInventario();
             else if (tabName === 'gastos') {
                 // Auto-set date range to last 60 days if not already set
@@ -1337,6 +1409,69 @@
             }
         }
         
+        async function cargarVentasPorDia() {
+            const desde = document.getElementById('vdiaDesde').value;
+            const hasta = document.getElementById('vdiaHasta').value;
+            const cont = document.getElementById('ventasPorDiaContenido');
+            if (!desde || !hasta) { showAlert('⚠️ Selecciona un rango de fechas', 'warning'); return; }
+
+            const { data: ventas, error } = await db
+                .from('ventas')
+                .select('fecha, producto_id, vendidos, ingreso, ganancia')
+                .gte('fecha', desde)
+                .lte('fecha', hasta)
+                .order('fecha', { ascending: false });
+
+            if (error) { cont.innerHTML = '<p style="color:var(--danger);">Error: ' + error.message + '</p>'; return; }
+            if (!ventas || !ventas.length) { cont.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:1rem;">No hay ventas en este rango.</p>'; return; }
+
+            const nombreProd = {};
+            productos.forEach(p => { nombreProd[p.id] = p.nombre; });
+
+            const porFecha = {};
+            ventas.forEach(v => {
+                if (!porFecha[v.fecha]) porFecha[v.fecha] = [];
+                porFecha[v.fecha].push(v);
+            });
+
+            const fechas = Object.keys(porFecha).sort().reverse();
+            let html = '';
+            fechas.forEach(f => {
+                const filas = porFecha[f].filter(v => (v.vendidos || 0) > 0)
+                    .sort((a, b) => (b.vendidos || 0) - (a.vendidos || 0));
+                if (!filas.length) return;
+                const totVend = filas.reduce((s, v) => s + (v.vendidos || 0), 0);
+                const totIng = filas.reduce((s, v) => s + (v.ingreso || 0), 0);
+                const totGan = filas.reduce((s, v) => s + (v.ganancia || 0), 0);
+                const fechaTxt = (typeof formatearFechaConDia === 'function') ? formatearFechaConDia(f) : f;
+
+                html += '<div class="card" style="margin-bottom:1rem;">'
+                    + '<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">'
+                    + '<strong style="font-size:1rem;">' + fechaTxt + '</strong>'
+                    + '<span style="font-size:0.85rem;color:var(--text-light);">' + totVend + ' u \u00b7 \u20b2 ' + totIng.toLocaleString() + '</span></div>'
+                    + '<table style="width:100%;border-collapse:collapse;font-size:0.9rem;">'
+                    + '<thead><tr style="border-bottom:2px solid var(--border);text-align:left;">'
+                    + '<th style="padding:0.4rem 0.3rem;">Producto</th>'
+                    + '<th style="padding:0.4rem 0.3rem;text-align:right;">Vend.</th>'
+                    + '<th style="padding:0.4rem 0.3rem;text-align:right;">Ingreso</th></tr></thead><tbody>';
+                filas.forEach(v => {
+                    const nom = nombreProd[v.producto_id] || ('Producto #' + v.producto_id);
+                    html += '<tr style="border-bottom:1px solid var(--border);">'
+                        + '<td style="padding:0.4rem 0.3rem;">' + nom + '</td>'
+                        + '<td style="padding:0.4rem 0.3rem;text-align:right;font-weight:600;">' + (v.vendidos || 0) + '</td>'
+                        + '<td style="padding:0.4rem 0.3rem;text-align:right;color:var(--success);">\u20b2 ' + (v.ingreso || 0).toLocaleString() + '</td></tr>';
+                });
+                html += '<tr style="border-top:2px solid var(--border);font-weight:700;">'
+                    + '<td style="padding:0.4rem 0.3rem;">TOTAL</td>'
+                    + '<td style="padding:0.4rem 0.3rem;text-align:right;">' + totVend + '</td>'
+                    + '<td style="padding:0.4rem 0.3rem;text-align:right;color:var(--success);">\u20b2 ' + totIng.toLocaleString() + '</td></tr>';
+                html += '</tbody></table>'
+                    + '<div style="font-size:0.8rem;color:var(--text-light);margin-top:0.5rem;">Ganancia: \u20b2 ' + totGan.toLocaleString() + '</div>'
+                    + '</div>';
+            });
+            cont.innerHTML = html || '<p style="text-align:center;color:var(--text-light);padding:1rem;">No hay ventas en este rango.</p>';
+        }
+
         async function cargarHistorial() {
             const desde = document.getElementById('historialDesde').value;
             const hasta = document.getElementById('historialHasta').value;
@@ -2040,6 +2175,12 @@
             }
             
             fechaActualInput.setAttribute('data-fecha-cargada', fechaSeleccionada);
+
+            const arqFechaInput = document.getElementById('arqueoFecha');
+            if (arqFechaInput && arqFechaInput.value !== fechaSeleccionada) {
+                arqFechaInput.value = fechaSeleccionada;
+                cargarVentaDelDia();
+            }
             
             // 1) Primero verificar si la fecha seleccionada ya tiene ventas guardadas.
             // Si tiene, se cargan esos datos y no se arrastran sobrantes.
@@ -2272,6 +2413,156 @@
             `).join('');
         }
         
+        let vistaCargaSimple = false;
+        let sheetProductoId = null;
+
+        function filtrarProductosVenta() {
+            const q = (document.getElementById('buscarProductoVenta').value || '').trim().toLowerCase();
+            document.querySelectorAll('#productosVenta .product-row').forEach(row => {
+                const n = row.querySelector('.product-name');
+                const nombre = n ? n.textContent.toLowerCase() : '';
+                row.style.display = (q === '' || nombre.includes(q)) ? '' : 'none';
+            });
+            document.querySelectorAll('#listaSimple .simple-row').forEach(row => {
+                const nombre = (row.getAttribute('data-nombre') || '').toLowerCase();
+                row.style.display = (q === '' || nombre.includes(q)) ? '' : 'none';
+            });
+            const cont = document.getElementById('contadorProductosVenta');
+            if (cont) cont.textContent = q === '' ? '' : 'filtrando: ' + q;
+        }
+
+        function estadoProductoVenta(id) {
+            const ph = parseInt(document.getElementById('prod_hoy_' + id)?.value) || 0;
+            const so = parseInt(document.getElementById('sobr_' + id)?.value) || 0;
+            const av = parseInt(document.getElementById('aver_' + id)?.value) || 0;
+            const sant = parseInt(document.getElementById('sobrant_ant_' + id)?.value) || 0;
+            const vend = Math.max(0, (sant + ph) - so - av);
+            const p = productos.find(x => x.id === id);
+            const ing = vend * (p ? p.precio_venta : 0);
+            return { ph, so, av, sant, vend, ing, cargado: (ph > 0 || so > 0 || av > 0) };
+        }
+
+        function renderListaSimple() {
+            const cont = document.getElementById('listaSimple');
+            if (!cont) return;
+            if (!productos.length) { cont.innerHTML = '<p style="text-align:center;color:var(--text-light);padding:1rem;">No hay productos</p>'; return; }
+            cont.innerHTML = productos.map(p => {
+                const e = estadoProductoVenta(p.id);
+                const chip = e.cargado
+                    ? '<span style="font-size:0.7rem;background:var(--success);color:#fff;border-radius:10px;padding:0.15rem 0.5rem;">✓ cargado</span>'
+                    : '<span style="font-size:0.7rem;background:var(--border);color:var(--text-light);border-radius:10px;padding:0.15rem 0.5rem;">pendiente</span>';
+                const sub = e.cargado ? ('vend ' + e.vend + ' · ₲ ' + e.ing.toLocaleString()) : ('sobrante ant. ' + e.sant);
+                const nombreAttr = p.nombre.replace(/"/g, '&quot;');
+                return '<div class="simple-row" data-nombre="' + nombreAttr + '" onclick="abrirSheetProducto(' + p.id + ')" style="background:var(--bg-card);border:1px solid var(--border);border-radius:12px;padding:0.75rem 1rem;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">'
+                    + '<div><div style="font-weight:700;">' + p.nombre + '</div><div style="font-size:0.8rem;color:var(--text-light);">' + sub + '</div></div>'
+                    + '<div style="display:flex;gap:0.5rem;align-items:center;">' + chip + '<span style="color:var(--text-light);font-size:1.2rem;">›</span></div></div>';
+            }).join('');
+            filtrarProductosVenta();
+        }
+
+        function toggleVistaCarga() {
+            vistaCargaSimple = !vistaCargaSimple;
+            document.getElementById('productosVenta').style.display = vistaCargaSimple ? 'none' : '';
+            document.getElementById('listaSimple').style.display = vistaCargaSimple ? 'flex' : 'none';
+            document.getElementById('nlVentaWrap').style.display = vistaCargaSimple ? 'block' : 'none';
+            document.getElementById('btnVistaCarga').textContent = vistaCargaSimple ? '📊 Vista grilla' : '📋 Vista simple';
+            if (vistaCargaSimple) renderListaSimple();
+            else filtrarProductosVenta();
+        }
+
+        function abrirSheetProducto(id) {
+            sheetProductoId = id;
+            const p = productos.find(x => x.id === id);
+            const e = estadoProductoVenta(id);
+            document.getElementById('sheetTitulo').textContent = p ? p.nombre : 'Producto';
+            document.getElementById('sheetSant').value = e.sant;
+            document.getElementById('sheetProd').value = e.ph || '';
+            document.getElementById('sheetSobr').value = e.so || '';
+            document.getElementById('sheetAver').value = e.av || '';
+            document.getElementById('sheetNL').value = '';
+            calcSheet();
+            document.getElementById('sheetVentaOverlay').style.display = 'flex';
+        }
+
+        function cerrarSheetProducto() {
+            document.getElementById('sheetVentaOverlay').style.display = 'none';
+            sheetProductoId = null;
+        }
+
+        function calcSheet() {
+            const p = productos.find(x => x.id === sheetProductoId);
+            const sant = parseInt(document.getElementById('sheetSant').value) || 0;
+            const ph = parseInt(document.getElementById('sheetProd').value) || 0;
+            const so = parseInt(document.getElementById('sheetSobr').value) || 0;
+            const av = parseInt(document.getElementById('sheetAver').value) || 0;
+            const vend = Math.max(0, (sant + ph) - so - av);
+            const ing = vend * (p ? p.precio_venta : 0);
+            document.getElementById('sheetVend').textContent = vend;
+            document.getElementById('sheetIng').textContent = '₲ ' + ing.toLocaleString();
+        }
+
+        function guardarSheetProducto() {
+            const id = sheetProductoId;
+            if (id == null) return;
+            document.getElementById('prod_hoy_' + id).value = parseInt(document.getElementById('sheetProd').value) || 0;
+            document.getElementById('sobr_' + id).value = parseInt(document.getElementById('sheetSobr').value) || 0;
+            document.getElementById('aver_' + id).value = parseInt(document.getElementById('sheetAver').value) || 0;
+            calcularProduccionTotal(id);
+            cerrarSheetProducto();
+            renderListaSimple();
+        }
+
+        function parseFraseVenta(txt) {
+            const t = txt.toLowerCase();
+            const nums = (t.match(/\d+/g) || []).map(Number);
+            let sobr = 0, aver = 0;
+            const ms = t.match(/sobr\w*\s*(\d+)/);
+            const ma = t.match(/(\d+)\s*averi|averi\w*\s*(\d+)/);
+            if (ms) sobr = parseInt(ms[1]) || 0;
+            if (ma) aver = parseInt(ma[1] || ma[2]) || 0;
+            const usados = [];
+            if (ms) usados.push(String(parseInt(ms[1])));
+            if (ma) usados.push(String(parseInt(ma[1] || ma[2])));
+            let prod = 0;
+            for (const n of nums) { if (!usados.includes(String(n))) { prod = n; break; } }
+            if (prod === 0 && nums.length && usados.length < nums.length) {
+                const libres = nums.filter(n => !usados.includes(String(n)));
+                if (libres.length) prod = libres[0];
+            }
+            return { prod, sobr, aver };
+        }
+
+        function aplicarNLVenta() {
+            const inp = document.getElementById('nlVenta');
+            const msg = document.getElementById('nlVentaMsg');
+            const txt = (inp.value || '').trim();
+            if (!txt) return;
+            const t = txt.toLowerCase();
+            const p = productos.find(x => t.includes(x.nombre.toLowerCase()));
+            if (!p) { msg.style.color = 'var(--danger)'; msg.textContent = 'No reconocí el producto.'; return; }
+            const v = parseFraseVenta(txt);
+            document.getElementById('prod_hoy_' + p.id).value = v.prod;
+            document.getElementById('sobr_' + p.id).value = v.sobr;
+            document.getElementById('aver_' + p.id).value = v.aver;
+            calcularProduccionTotal(p.id);
+            renderListaSimple();
+            msg.style.color = 'var(--success)';
+            msg.textContent = p.nombre + ': prod ' + v.prod + ', sobró ' + v.sobr + ', averiado ' + v.aver;
+            inp.value = '';
+        }
+
+        function aplicarNLSheet() {
+            const inp = document.getElementById('sheetNL');
+            const txt = (inp.value || '').trim();
+            if (!txt) return;
+            const v = parseFraseVenta(txt);
+            document.getElementById('sheetProd').value = v.prod;
+            document.getElementById('sheetSobr').value = v.sobr;
+            document.getElementById('sheetAver').value = v.aver;
+            inp.value = '';
+            calcSheet();
+        }
+
         function calcularProduccionTotal(productoId) {
             const sobranteAnterior = parseInt(document.getElementById(`sobrant_ant_${productoId}`).value) || 0;
             const producidoHoy = parseInt(document.getElementById(`prod_hoy_${productoId}`).value) || 0;
@@ -2290,6 +2581,7 @@
                 const orden = [];
                 
                 productRows.forEach(row => {
+                    if (row.style.display === 'none') return;
                     const prodHoyInput = row.querySelector('[id^="prod_hoy_"]');
                     const sobrInput = row.querySelector('[id^="sobr_"]:not([id*="_ant_"])');
                     const averInput = row.querySelector('[id^="aver_"]');
