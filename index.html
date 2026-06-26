@@ -563,9 +563,15 @@
                             </div>
                         </div>
                         <div style="font-size:0.75rem; color:var(--text-light); margin-bottom:0.75rem;">Solo anotación. No guarda en la base. Se guarda en este teléfono por fecha.</div>
-                        <div class="form-group" style="margin:0 0 1rem;">
-                            <label class="form-label">Producto</label>
-                            <select id="calcSelect" class="form-select" onchange="calcCambiarProducto()"></select>
+                        <div class="grid grid-2" style="gap:0.75rem; margin-bottom:1rem;">
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Fecha del cálculo</label>
+                                <input type="date" id="calcFecha" class="form-input" onchange="calcCambiarFecha()">
+                            </div>
+                            <div class="form-group" style="margin:0;">
+                                <label class="form-label">Producto</label>
+                                <select id="calcSelect" class="form-select" onchange="calcCambiarProducto()"></select>
+                            </div>
                         </div>
 
                         <div style="border:1px solid #e5e5e5; border-radius:10px; padding:0.75rem; margin-bottom:0.75rem;">
@@ -605,9 +611,10 @@
                             <button type="button" onclick="calcLimpiar('crudo');calcLimpiar('coc')" style="background:none; border:none; color:var(--danger); font-size:0.75rem; cursor:pointer; padding:0.25rem 0; margin-top:0.25rem;">Borrar sobrantes</button>
                         </div>
 
+                        <button type="button" class="btn btn-success" onclick="calcCargarAmbos()" style="width:100%; margin-bottom:0.5rem;">⬇️ Cargar ambos (producido + sobrante)</button>
                         <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                            <button type="button" class="btn btn-primary" onclick="calcUsarProducido()" style="flex:1; min-width:140px;">⬇️ Usar producido</button>
-                            <button type="button" class="btn btn-primary" onclick="calcUsarSobrante()" style="flex:1; min-width:140px;">⬇️ Usar sobrante</button>
+                            <button type="button" class="btn btn-secondary" onclick="calcUsarProducido()" style="flex:1; min-width:140px;">Solo producido</button>
+                            <button type="button" class="btn btn-secondary" onclick="calcUsarSobrante()" style="flex:1; min-width:140px;">Solo sobrante</button>
                         </div>
                     </div>
                 </div>
@@ -3406,7 +3413,8 @@
         
         // ---- Bloc de cálculo auxiliar (no impacta en la base de datos) ----
         let calcProductoId = null;
-        function calcKey() { return 'asaditos_calc_' + (document.getElementById('ventaFecha').value || 'sin-fecha'); }
+        let calcFechaActiva = null;
+        function calcKey() { return 'asaditos_calc_' + (calcFechaActiva || document.getElementById('ventaFecha').value || 'sin-fecha'); }
         function calcLoad() { try { return JSON.parse(localStorage.getItem(calcKey()) || '{}'); } catch (e) { return {}; } }
         function calcStore(d) { try { localStorage.setItem(calcKey(), JSON.stringify(d)); } catch (e) {} }
         function calcSum(a) { return a.reduce((x, y) => x + y, 0); }
@@ -3417,14 +3425,40 @@
             return d;
         }
 
-        function abrirBlocCalculo(id) {
+        function abrirBlocCalculo(id, fecha) {
+            calcFechaActiva = fecha || null;
+            document.getElementById('calcFecha').value = calcFechaActiva || document.getElementById('ventaFecha').value;
             const sel = document.getElementById('calcSelect');
             sel.innerHTML = [...productos].sort((a, b) => a.nombre.localeCompare(b.nombre))
                 .map(p => `<option value="${p.id}">${p.nombre}</option>`).join('');
-            sel.value = id ? String(id) : (productos[0] ? String(productos[0].id) : '');
+            let elegido = id ? String(id) : '';
+            if (!elegido) {
+                const d = calcLoad();
+                const conDatos = Object.keys(d).find(pid => {
+                    const o = d[pid] || {};
+                    return calcSum(o.prod || []) + calcSum(o.crudo || []) + calcSum(o.coc || []) > 0;
+                });
+                elegido = conDatos || (productos[0] ? String(productos[0].id) : '');
+            }
+            sel.value = elegido;
             calcProductoId = sel.value;
             renderBlocCalculo();
             document.getElementById('calcOverlay').style.display = 'flex';
+        }
+        function calcCambiarFecha() {
+            calcFechaActiva = document.getElementById('calcFecha').value || null;
+            renderBlocCalculo();
+        }
+        function calcCargarAmbos() {
+            const o = calcGetData()[calcProductoId];
+            const tp = calcSum(o.prod), ts = calcSum(o.crudo) + calcSum(o.coc);
+            const ip = document.getElementById('prod_hoy_' + calcProductoId);
+            const is = document.getElementById('sobr_' + calcProductoId);
+            if (!ip && !is) { showAlert('⚠️ Ese producto no está en la carga abierta', 'warning'); return; }
+            if (ip) { ip.value = tp; calcularProduccionTotal(parseInt(calcProductoId)); }
+            if (is) { is.value = ts; }
+            calcularResumen();
+            showAlert('✅ Cargado: producido ' + tp + ' / sobrante ' + ts, 'success');
         }
         function cerrarBlocCalculo() { document.getElementById('calcOverlay').style.display = 'none'; }
         function calcCambiarProducto() { calcProductoId = document.getElementById('calcSelect').value; renderBlocCalculo(); }
@@ -3501,7 +3535,10 @@
                 return `<div style="border:1px solid #e5e5e5; border-radius:10px; padding:0.75rem; margin-bottom:0.75rem;">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem;">
                         <strong>${formatearFechaConDia(fecha)}</strong>
-                        <button type="button" onclick="borrarCalculoFecha('${k}')" class="btn btn-danger" style="width:auto; padding:0.2rem 0.6rem; font-size:0.8rem;">🗑️</button>
+                        <div style="display:flex; gap:0.4rem;">
+                            <button type="button" onclick="editarCalculoFecha('${fecha}')" class="btn btn-secondary" style="width:auto; padding:0.2rem 0.6rem; font-size:0.8rem;">✏️ Editar</button>
+                            <button type="button" onclick="borrarCalculoFecha('${k}')" class="btn btn-danger" style="width:auto; padding:0.2rem 0.6rem; font-size:0.8rem;">🗑️</button>
+                        </div>
                     </div>
                     <table class="table" style="font-size:0.85rem;"><thead><tr><th>Producto</th><th>Producido</th><th>Sobrante</th></tr></thead><tbody>${filas}</tbody></table>
                 </div>`;
@@ -3510,6 +3547,7 @@
             document.getElementById('calcHistOverlay').style.display = 'flex';
         }
         function cerrarHistorialCalculo() { document.getElementById('calcHistOverlay').style.display = 'none'; }
+        function editarCalculoFecha(fecha) { cerrarHistorialCalculo(); abrirBlocCalculo('', fecha); }
         function borrarCalculoFecha(k) {
             if (!confirm('¿Borrar las anotaciones de esta fecha?')) return;
             try { localStorage.removeItem(k); } catch (e) {}
